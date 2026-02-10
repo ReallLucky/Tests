@@ -3,19 +3,27 @@ import time
 import random
 import streamlit.components.v1 as components
 
-# -----------------------------
+# =============================
 # Konfiguration
-# -----------------------------
-GRID_SIZE = 20
-PIXELS = 400
-CELL = PIXELS // GRID_SIZE
+# =============================
+GRID = 20
+SIZE = 400
+CELL = SIZE // GRID
 
-# -----------------------------
-# Session State initialisieren
-# -----------------------------
+OPPOSITE = {
+    "w": "s",
+    "s": "w",
+    "a": "d",
+    "d": "a",
+}
+
+# =============================
+# Game Init
+# =============================
 def init_game():
     st.session_state.snake = [(10, 10), (9, 10), (8, 10)]
-    st.session_state.direction = "d"
+    st.session_state.dir = "d"
+    st.session_state.next_dir = "d"
     st.session_state.food = spawn_food()
     st.session_state.score = 0
     st.session_state.speed = 0.25
@@ -23,29 +31,26 @@ def init_game():
 
 def spawn_food():
     while True:
-        pos = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
-        if pos not in st.session_state.get("snake", []):
-            return pos
+        p = (random.randint(0, GRID - 1), random.randint(0, GRID - 1))
+        if p not in st.session_state.snake:
+            return p
 
 if "snake" not in st.session_state:
     init_game()
 
-# -----------------------------
-# Steuerung aus JS übernehmen
-# -----------------------------
+# =============================
+# Keyboard Listener (stabil)
+# =============================
 key = components.html(
     """
     <script>
-    const streamlitKey = (key) => {
-        window.parent.postMessage(
-            { type: "streamlit:setComponentValue", value: key },
-            "*"
-        );
-    };
-
-    window.addEventListener("keydown", (e) => {
-        if (["w","a","s","d"].includes(e.key)) {
-            streamlitKey(e.key);
+    document.addEventListener("keydown", e => {
+        const k = e.key.toLowerCase();
+        if (["w","a","s","d"].includes(k)) {
+            window.parent.postMessage(
+                { type: "streamlit:setComponentValue", value: k },
+                "*"
+            );
         }
     });
     </script>
@@ -53,81 +58,76 @@ key = components.html(
     height=0,
 )
 
-if key in ["w", "a", "s", "d"]:
-    st.session_state.direction = key
+if key and key != OPPOSITE.get(st.session_state.dir):
+    st.session_state.next_dir = key
 
-# -----------------------------
-# Spiellogik
-# -----------------------------
+# =============================
+# Game Tick
+# =============================
 if not st.session_state.game_over:
-    head_x, head_y = st.session_state.snake[0]
+    st.session_state.dir = st.session_state.next_dir
 
-    moves = {
-        "w": (0, -1),
-        "s": (0, 1),
-        "a": (-1, 0),
-        "d": (1, 0),
-    }
+    x, y = st.session_state.snake[0]
+    moves = {"w": (0, -1), "s": (0, 1), "a": (-1, 0), "d": (1, 0)}
+    dx, dy = moves[st.session_state.dir]
+    new = (x + dx, y + dy)
 
-    dx, dy = moves[st.session_state.direction]
-    new_head = (head_x + dx, head_y + dy)
-
-    # Kollision
+    # Collision
     if (
-        new_head[0] < 0
-        or new_head[0] >= GRID_SIZE
-        or new_head[1] < 0
-        or new_head[1] >= GRID_SIZE
-        or new_head in st.session_state.snake
+        new[0] < 0 or new[0] >= GRID
+        or new[1] < 0 or new[1] >= GRID
+        or new in st.session_state.snake
     ):
         st.session_state.game_over = True
     else:
-        st.session_state.snake.insert(0, new_head)
+        st.session_state.snake.insert(0, new)
 
-        if new_head == st.session_state.food:
+        if new == st.session_state.food:
             st.session_state.score += 1
             st.session_state.food = spawn_food()
             if st.session_state.score % 5 == 0:
-                st.session_state.speed = max(0.05, st.session_state.speed - 0.02)
+                st.session_state.speed = max(0.06, st.session_state.speed - 0.02)
         else:
             st.session_state.snake.pop()
 
-# -----------------------------
-# Canvas Rendering
-# -----------------------------
-canvas_html = f"""
-<canvas id="game" width="{PIXELS}" height="{PIXELS}"
-style="border:1px solid #ccc; background:#f9f9f9"></canvas>
+# =============================
+# Render Canvas
+# =============================
+snake_js = "".join(
+    f"ctx.fillRect({x*CELL},{y*CELL},{CELL},{CELL});"
+    for x, y in st.session_state.snake
+)
 
+canvas = f"""
+<canvas id="c" width="{SIZE}" height="{SIZE}"
+style="background:#f7f7f7;border:1px solid #ccc"></canvas>
 <script>
-const c = document.getElementById("game");
+const c = document.getElementById("c");
 const ctx = c.getContext("2d");
+ctx.clearRect(0,0,{SIZE},{SIZE});
 
-ctx.clearRect(0,0,{PIXELS},{PIXELS});
-
-// Snake
+// snake
 ctx.fillStyle = "green";
-{''.join([f'ctx.fillRect({x*CELL},{y*CELL},{CELL},{CELL});' for x,y in st.session_state.snake])}
+{snake_js}
 
-// Food
+// food
 ctx.fillStyle = "red";
 ctx.beginPath();
 ctx.arc(
-    {st.session_state.food[0]*CELL + CELL//2},
-    {st.session_state.food[1]*CELL + CELL//2},
-    {CELL//2 - 2},
-    0,
-    Math.PI * 2
+    {st.session_state.food[0]*CELL + CELL/2},
+    {st.session_state.food[1]*CELL + CELL/2},
+    {CELL/2 - 2},
+    0, Math.PI * 2
 );
 ctx.fill();
 </script>
 """
 
-components.html(canvas_html, height=PIXELS + 10)
+components.html(canvas, height=SIZE + 10)
 
-# -----------------------------
+# =============================
 # UI
-# -----------------------------
+# =============================
 st.markdown(f"### 🐍 Score: {st.session_state.score}")
 
 if st.session_state.game_over:
@@ -135,6 +135,7 @@ if st.session_state.game_over:
 
 if st.button("🔄 Neustart"):
     init_game()
+    st.rerun()
 
 time.sleep(st.session_state.speed)
 st.rerun()
