@@ -1,5 +1,6 @@
 numpy
-opencv-python
 keras-nightly
 pillow
 streamlit>=1.30
+tensorflow
+opencv-python-headless
