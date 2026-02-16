@@ -1,0 +1,3 @@
+0 Kopf
+1 Hand
+2 Stift
