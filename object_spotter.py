@@ -8,7 +8,7 @@ from PIL import Image, ImageOps
 np.set_printoptions(suppress=True)
 
 # Load the model
-model = load_model("keras_Model.h5", compile=False)
+model = load_model("keras_model.h5", compile=False)
 
 # Load labels
 class_names = open("labels.txt", "r").readlines()
