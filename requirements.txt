@@ -1,6 +1,7 @@
-numpy
-keras-nightly
+streamlit
+tensorflow==2.20.0
+keras==2.12.0
+numpy==1.23.5
 pillow
-streamlit>=1.30
-tensorflow
 opencv-python-headless
+h5py==3.8.0
