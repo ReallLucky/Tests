@@ -55,19 +55,23 @@ def upload_image(image, predicted_class):
 
     filename = f"{predicted_class}/{uuid.uuid4()}.jpg"
 
+    # 🔥 Sicherstellen dass es echtes RGB JPEG ist
+    image = image.convert("RGB")
+
     buffer = io.BytesIO()
-    image.save(buffer, format="JPEG")
+    image.save(buffer, format="JPEG", quality=95)
     buffer.seek(0)
 
     supabase.storage.from_("fundbilder").upload(
         filename,
         buffer.getvalue(),
-        {"content-type": "image/jpeg"}
+        file_options={"content-type": "image/jpeg"}
     )
 
-    public_url = supabase.storage.from_("fundbilder").get_public_url(filename)
+    public_url = supabase.storage.from_("fundbilder") \
+        .get_public_url(filename)["publicUrl"]
 
-    return public_url
+    return public_urlÏ
 
 # =====================================================
 # SAVE METADATA
