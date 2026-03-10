@@ -21,11 +21,6 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 # =====================================================
 st.markdown("""
 <style>
-#MainMenu {visibility:hidden;}
-footer {visibility:hidden;}
-
-/* Header verstecken */
-header {visibility:hidden;}
 
 /* Hintergrund Farbverlauf + Kreisförmiges Leuchten unten */
 [data-testid="stAppViewContainer"]{
@@ -216,7 +211,7 @@ if page == "Galerie":
         for i, entry in enumerate(entries):
             with cols[i % 4]:
                 st.markdown('<div class="thumbnail">', unsafe_allow_html=True)
-                st.image(entry["image_url"], width=True)
+                st.image(entry["image_url"], use_column_width=True)
                 st.markdown(f"""
                     **{entry['predicted_class']}**  
                     Confidence: {round(entry['confidence']*100,2)} %  
@@ -244,7 +239,7 @@ if page == "Upload":
 
     if image_file:
         image = Image.open(image_file).convert("RGB")
-        st.image(image, caption="Vorschau", width=True)
+        st.image(image, caption="Vorschau", use_column_width=True)
         predicted_class, confidence = classify_image(image)
         st.subheader("🤖 KI-Erkennung")
         st.write("Klasse:", predicted_class)
