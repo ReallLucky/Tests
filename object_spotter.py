@@ -21,7 +21,11 @@ background: radial-gradient(circle at bottom, #000033 0%, #000000 60%);
 background-attachment: fixed;
 }
 
-/* Sidebar */
+/* Streamlit Topbar ausblenden */
+header {visibility:hidden;}
+footer {visibility:hidden;}
+
+/* Custom Sidebar */
 #custom_sidebar {
 position: fixed;
 top: 0;
@@ -41,6 +45,15 @@ padding-top: 50px;
 /* Sidebar expanded */
 #custom_sidebar.expanded{
 width: 200px;
+}
+
+/* Content container verschieben */
+[data-testid="stVerticalBlock"]{
+margin-left: 70px; /* Standardbreite der Sidebar */
+transition: margin-left 0.3s;
+}
+#custom_sidebar.expanded ~ div[data-testid="stVerticalBlock"]{
+margin-left: 200px;
 }
 
 /* Hamburger */
