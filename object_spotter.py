@@ -27,7 +27,7 @@ footer {visibility:hidden;}
 
 /* App Hintergrund: radialer Farbverlauf */
 [data-testid="stAppViewContainer"]{
-background: radial-gradient(circle at bottom, #000033 0%, #000000 40%);
+background: radial-gradient(circle at bottom, #000033 0%, #000000 60%);
 background-attachment: fixed;
 }
 
