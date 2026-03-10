@@ -21,10 +21,15 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 # =====================================================
 st.markdown("""
 <style>
+#MainMenu {visibility:hidden;}
+footer {visibility:hidden;}
+
+/* Header verstecken */
+header {visibility:hidden;}
 
 /* Hintergrund Farbverlauf + Kreisförmiges Leuchten unten */
 [data-testid="stAppViewContainer"]{
-background: radial-gradient(circle at bottom, #000000 0%, #000033 60%);
+background: radial-gradient(circle at bottom, #000033 60%, #000000 0%);
 background-repeat: no-repeat;
 background-attachment: fixed;
 }
