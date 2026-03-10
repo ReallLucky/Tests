@@ -25,14 +25,17 @@ st.markdown("""
 #MainMenu {visibility:hidden;}
 footer {visibility:hidden;}
 
-/* Header sichtbar lassen für Hamburger Menü */
-header {
-background:#0f0f0f;
-border-bottom:1px solid #222;
-}
+/* Header verstecken */
+header {visibility:hidden;}
 
-/* Hamburger Button heller machen */
+/* Hamburger Menü sichtbar lassen */
 button[kind="header"]{
+position:fixed;
+top:10px;
+left:10px;
+z-index:10000;
+background:#0f0f0f;
+border-radius:8px;
 color:white;
 }
 
