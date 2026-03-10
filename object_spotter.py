@@ -32,52 +32,54 @@ color:white;
 font-family:Arial;
 }
 
-.block-container{
-padding-top:20px;
+/* =============================== */
+/* SIDEBAR STYLE */
+/* =============================== */
+
+section[data-testid="stSidebar"]{
+background:#0f0f0f;
+border-right:1px solid #222;
 }
 
-/* ================================= */
-/* TOP NAVIGATION TABS */
-/* ================================= */
-
-div[data-baseweb="tab-list"]{
-border-bottom:1px solid #222;
+.sidebar-btn button{
+width:100%;
+background:none;
+border:none;
+color:white;
+text-align:left;
+padding:10px 15px;
+font-size:16px;
+border-radius:8px;
 }
+
+.sidebar-btn button:hover{
+background:#1f1f1f;
+}
+
+/* =============================== */
+/* UPLOAD TABS STYLE */
+/* =============================== */
 
 button[data-baseweb="tab"]{
-font-size:18px;
-padding:10px 25px;
-background:#0f0f0f;
+background:#181818;
+border-radius:12px 12px 0px 0px;
 border:none;
 color:white;
 }
 
 button[data-baseweb="tab"]:hover{
-background:#1f1f1f;
+background:#2a2a2a;
 }
 
 button[data-baseweb="tab"][aria-selected="true"]{
-border-bottom:3px solid #ff0000;
-}
-
-/* ================================= */
-/* UPLOAD TABS */
-/* ================================= */
-
-.upload-tabs button[data-baseweb="tab"]{
 background:#181818;
-border-radius:15px 15px 0px 0px;
-border-bottom:none;
-}
-
-.upload-tabs button[data-baseweb="tab"][aria-selected="true"]{
-background:#ff0000;
 color:white;
+border:none;
 }
 
-/* ================================= */
+/* =============================== */
 /* THUMBNAILS */
-/* ================================= */
+/* =============================== */
 
 .thumbnail{
 background:#181818;
@@ -183,14 +185,29 @@ def load_entries(class_filter=None, tag_filter=None):
     return response.data
 
 # =====================================================
-# NAVIGATION (YOUTUBE STYLE TABS)
+# SIDEBAR NAVIGATION (TEXT BUTTONS)
 # =====================================================
-tab_galerie, tab_upload = st.tabs(["🏠 Galerie", "📦 Neuer Fund"])
+if "page" not in st.session_state:
+    st.session_state.page = "Galerie"
+
+st.sidebar.title("FundTube")
+
+st.sidebar.markdown('<div class="sidebar-btn">', unsafe_allow_html=True)
+
+if st.sidebar.button("🏠 Galerie"):
+    st.session_state.page = "Galerie"
+
+if st.sidebar.button("📦 Neuer Fund"):
+    st.session_state.page = "Upload"
+
+st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
+page = st.session_state.page
 
 # =====================================================
 # GALERIE
 # =====================================================
-with tab_galerie:
+if page == "Galerie":
 
     st.header("🖼 Fundstücke")
 
@@ -232,13 +249,11 @@ with tab_galerie:
                 st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
-# UPLOAD PAGE
+# UPLOAD
 # =====================================================
-with tab_upload:
+if page == "Upload":
 
     st.header("📦 Neues Fundstück")
-
-    st.markdown('<div class="upload-tabs">', unsafe_allow_html=True)
 
     upload_tab, camera_tab = st.tabs(["📤 Datei hochladen","📷 Kamera"])
 
@@ -260,8 +275,6 @@ with tab_upload:
 
         if camera_file:
             image_file = camera_file
-
-    st.markdown('</div>', unsafe_allow_html=True)
 
     if image_file:
 
