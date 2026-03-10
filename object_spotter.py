@@ -17,7 +17,7 @@ SUPABASE_KEY = st.secrets["supabase"]["key"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # =====================================================
-# CUSTOM CSS (YouTube Style + Streamlit ausblenden)
+# CSS DESIGN
 # =====================================================
 st.markdown("""
 <style>
@@ -33,8 +33,51 @@ font-family:Arial;
 }
 
 .block-container{
-padding-top:90px;
+padding-top:20px;
 }
+
+/* ================================= */
+/* TOP NAVIGATION TABS */
+/* ================================= */
+
+div[data-baseweb="tab-list"]{
+border-bottom:1px solid #222;
+}
+
+button[data-baseweb="tab"]{
+font-size:18px;
+padding:10px 25px;
+background:#0f0f0f;
+border:none;
+color:white;
+}
+
+button[data-baseweb="tab"]:hover{
+background:#1f1f1f;
+}
+
+button[data-baseweb="tab"][aria-selected="true"]{
+border-bottom:3px solid #ff0000;
+}
+
+/* ================================= */
+/* UPLOAD TABS */
+/* ================================= */
+
+.upload-tabs button[data-baseweb="tab"]{
+background:#181818;
+border-radius:15px 15px 0px 0px;
+border-bottom:none;
+}
+
+.upload-tabs button[data-baseweb="tab"][aria-selected="true"]{
+background:#ff0000;
+color:white;
+}
+
+/* ================================= */
+/* THUMBNAILS */
+/* ================================= */
 
 .thumbnail{
 background:#181818;
@@ -50,18 +93,6 @@ transform:scale(1.03);
 
 img{
 border-radius:10px;
-}
-
-button[data-baseweb="tab"]{
-font-size:16px;
-padding:10px 20px;
-background:#181818;
-border-radius:8px;
-}
-
-button[data-baseweb="tab"][aria-selected="true"]{
-background:#ff0000;
-color:white;
 }
 
 </style>
@@ -101,7 +132,7 @@ def classify_image(image):
     return predicted_class, confidence
 
 # =====================================================
-# BILD IN SUPABASE SPEICHERN
+# BILD HOCHLADEN
 # =====================================================
 def upload_image(image, predicted_class):
 
@@ -149,98 +180,34 @@ def load_entries(class_filter=None, tag_filter=None):
         query = query.eq("tag", tag_filter)
 
     response = query.execute()
-
     return response.data
 
 # =====================================================
-# NAVIGATION
+# NAVIGATION (YOUTUBE STYLE TABS)
 # =====================================================
-st.title("FundTube")
-
-page = st.sidebar.radio(
-    "Navigation",
-    ["Galerie", "Neuer Fund"]
-)
-
-# =====================================================
-# NEUER FUND (UPLOAD)
-# =====================================================
-if page == "Neuer Fund":
-
-    st.header("📦 Neues Fundstück")
-
-    st.markdown("### Bildquelle auswählen")
-
-    tab1, tab2 = st.tabs(["📤 Bild hochladen", "📷 Kamera"])
-
-    image_file = None
-
-    with tab1:
-        uploaded_file = st.file_uploader(
-            "Bild auswählen",
-            type=["jpg", "jpeg", "png"]
-        )
-
-        if uploaded_file:
-            image_file = uploaded_file
-
-    with tab2:
-        camera_file = st.camera_input("Foto aufnehmen")
-
-        if camera_file:
-            image_file = camera_file
-
-    if image_file:
-
-        image = Image.open(image_file).convert("RGB")
-        st.image(image, caption="Vorschau", use_column_width=True)
-
-        predicted_class, confidence = classify_image(image)
-
-        st.subheader("🤖 KI-Erkennung")
-
-        st.write("Klasse:", predicted_class)
-        st.write("Confidence:", round(confidence * 100, 2), "%")
-
-        tag = st.selectbox(
-            "Farb-Tag auswählen",
-            ["rot", "blau", "grün", "gelb", "schwarz", "weiß"]
-        )
-
-        if st.button("Speichern"):
-
-            image_url = upload_image(image, predicted_class)
-
-            save_metadata(
-                image_url,
-                predicted_class,
-                confidence,
-                tag
-            )
-
-            st.success("Fundstück gespeichert!")
+tab_galerie, tab_upload = st.tabs(["🏠 Galerie", "📦 Neuer Fund"])
 
 # =====================================================
 # GALERIE
 # =====================================================
-if page == "Galerie":
+with tab_galerie:
 
-    st.header("🖼 Galerie")
+    st.header("🖼 Fundstücke")
 
     class_filter = st.selectbox(
-        "Nach Klasse filtern",
-        ["Alle", "Hoodie", "Pants", "Shoes"]
+        "Kategorie",
+        ["Alle","Hoodie","Pants","Shoes"]
     )
 
     tag_filter = st.selectbox(
-        "Nach Farb-Tag filtern",
-        ["Alle", "rot", "blau", "grün", "gelb", "schwarz", "weiß"]
+        "Farb Tag",
+        ["Alle","rot","blau","grün","gelb","schwarz","weiß"]
     )
 
     entries = load_entries(class_filter, tag_filter)
 
     if not entries:
-        st.info("Keine Einträge gefunden.")
+        st.info("Keine Fundstücke vorhanden.")
 
     else:
 
@@ -263,3 +230,65 @@ if page == "Galerie":
                 )
 
                 st.markdown('</div>', unsafe_allow_html=True)
+
+# =====================================================
+# UPLOAD PAGE
+# =====================================================
+with tab_upload:
+
+    st.header("📦 Neues Fundstück")
+
+    st.markdown('<div class="upload-tabs">', unsafe_allow_html=True)
+
+    upload_tab, camera_tab = st.tabs(["📤 Datei hochladen","📷 Kamera"])
+
+    image_file = None
+
+    with upload_tab:
+
+        uploaded_file = st.file_uploader(
+            "Bild auswählen",
+            type=["jpg","jpeg","png"]
+        )
+
+        if uploaded_file:
+            image_file = uploaded_file
+
+    with camera_tab:
+
+        camera_file = st.camera_input("Foto aufnehmen")
+
+        if camera_file:
+            image_file = camera_file
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if image_file:
+
+        image = Image.open(image_file).convert("RGB")
+        st.image(image, caption="Vorschau", use_column_width=True)
+
+        predicted_class, confidence = classify_image(image)
+
+        st.subheader("🤖 KI-Erkennung")
+
+        st.write("Klasse:", predicted_class)
+        st.write("Confidence:", round(confidence*100,2), "%")
+
+        tag = st.selectbox(
+            "Farb Tag auswählen",
+            ["rot","blau","grün","gelb","schwarz","weiß"]
+        )
+
+        if st.button("Speichern"):
+
+            image_url = upload_image(image, predicted_class)
+
+            save_metadata(
+                image_url,
+                predicted_class,
+                confidence,
+                tag
+            )
+
+            st.success("Fundstück gespeichert!")
