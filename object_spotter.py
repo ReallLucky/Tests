@@ -17,7 +17,7 @@ SUPABASE_KEY = st.secrets["supabase"]["key"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # =====================================================
-# HIDE STREAMLIT + CUSTOM CSS
+# CUSTOM CSS (YouTube Style + Streamlit ausblenden)
 # =====================================================
 st.markdown("""
 <style>
@@ -36,57 +36,6 @@ font-family:Arial;
 padding-top:90px;
 }
 
-.yt-header{
-position:fixed;
-top:0;
-left:0;
-right:0;
-height:60px;
-background:#0f0f0f;
-border-bottom:1px solid #222;
-display:flex;
-align-items:center;
-padding-left:20px;
-z-index:1000;
-}
-
-.logo{
-font-size:22px;
-font-weight:bold;
-color:#ff0000;
-}
-
-.sidebar{
-position:fixed;
-top:60px;
-left:0;
-width:200px;
-bottom:0;
-background:#0f0f0f;
-border-right:1px solid #222;
-padding-top:20px;
-}
-
-.sidebar button{
-width:160px;
-margin:10px;
-padding:10px;
-background:#181818;
-color:white;
-border:none;
-border-radius:8px;
-cursor:pointer;
-}
-
-.sidebar button:hover{
-background:#282828;
-}
-
-.content{
-margin-left:220px;
-padding:20px;
-}
-
 .thumbnail{
 background:#181818;
 padding:10px;
@@ -103,16 +52,23 @@ img{
 border-radius:10px;
 }
 
+button[data-baseweb="tab"]{
+font-size:16px;
+padding:10px 20px;
+background:#181818;
+border-radius:8px;
+}
+
+button[data-baseweb="tab"][aria-selected="true"]{
+background:#ff0000;
+color:white;
+}
+
 </style>
-
-<div class="yt-header">
-<div class="logo">FundTube</div>
-</div>
-
 """, unsafe_allow_html=True)
 
 # =====================================================
-# LOAD MODEL
+# MODEL LADEN
 # =====================================================
 @st.cache_resource
 def load_tm_model():
@@ -145,7 +101,7 @@ def classify_image(image):
     return predicted_class, confidence
 
 # =====================================================
-# UPLOAD IMAGE
+# BILD IN SUPABASE SPEICHERN
 # =====================================================
 def upload_image(image, predicted_class):
 
@@ -166,7 +122,7 @@ def upload_image(image, predicted_class):
     return public_url
 
 # =====================================================
-# SAVE METADATA
+# METADATEN SPEICHERN
 # =====================================================
 def save_metadata(image_url, predicted_class, confidence, tag):
 
@@ -180,7 +136,7 @@ def save_metadata(image_url, predicted_class, confidence, tag):
     supabase.table("fundstuecke").insert(data).execute()
 
 # =====================================================
-# LOAD ENTRIES
+# EINTRÄGE LADEN
 # =====================================================
 def load_entries(class_filter=None, tag_filter=None):
 
@@ -199,49 +155,56 @@ def load_entries(class_filter=None, tag_filter=None):
 # =====================================================
 # NAVIGATION
 # =====================================================
-page = st.session_state.get("page", "Galerie")
+st.title("FundTube")
 
-col1, col2 = st.columns([1,1])
-
-with col1:
-    if st.button("🏠 Galerie"):
-        st.session_state.page = "Galerie"
-
-with col2:
-    if st.button("📦 Neuer Fund"):
-        st.session_state.page = "Upload"
-
-page = st.session_state.get("page", "Galerie")
-
-st.markdown('<div class="content">', unsafe_allow_html=True)
+page = st.sidebar.radio(
+    "Navigation",
+    ["Galerie", "Neuer Fund"]
+)
 
 # =====================================================
-# UPLOAD PAGE
+# NEUER FUND (UPLOAD)
 # =====================================================
-if page == "Upload":
+if page == "Neuer Fund":
 
-    st.markdown("## 📦 Neues Fundstück hochladen")
+    st.header("📦 Neues Fundstück")
 
-    uploaded_file = st.file_uploader("Bild hochladen", type=["jpg","jpeg","png"])
-    camera_file = st.camera_input("Foto aufnehmen")
+    st.markdown("### Bildquelle auswählen")
 
-    image_file = uploaded_file if uploaded_file else camera_file
+    tab1, tab2 = st.tabs(["📤 Bild hochladen", "📷 Kamera"])
+
+    image_file = None
+
+    with tab1:
+        uploaded_file = st.file_uploader(
+            "Bild auswählen",
+            type=["jpg", "jpeg", "png"]
+        )
+
+        if uploaded_file:
+            image_file = uploaded_file
+
+    with tab2:
+        camera_file = st.camera_input("Foto aufnehmen")
+
+        if camera_file:
+            image_file = camera_file
 
     if image_file:
 
         image = Image.open(image_file).convert("RGB")
-        st.image(image, use_column_width=True)
+        st.image(image, caption="Vorschau", use_column_width=True)
 
         predicted_class, confidence = classify_image(image)
 
-        st.markdown("### 🤖 KI-Erkennung")
+        st.subheader("🤖 KI-Erkennung")
 
         st.write("Klasse:", predicted_class)
-        st.write("Confidence:", round(confidence*100,2),"%")
+        st.write("Confidence:", round(confidence * 100, 2), "%")
 
         tag = st.selectbox(
-            "Farb Tag",
-            ["rot","blau","grün","gelb","schwarz","weiß"]
+            "Farb-Tag auswählen",
+            ["rot", "blau", "grün", "gelb", "schwarz", "weiß"]
         )
 
         if st.button("Speichern"):
@@ -258,26 +221,26 @@ if page == "Upload":
             st.success("Fundstück gespeichert!")
 
 # =====================================================
-# GALLERY PAGE
+# GALERIE
 # =====================================================
 if page == "Galerie":
 
-    st.markdown("## 🖼 Fundstücke")
+    st.header("🖼 Galerie")
 
     class_filter = st.selectbox(
-        "Kategorie",
-        ["Alle","Hoodie","Pants","Shoes"]
+        "Nach Klasse filtern",
+        ["Alle", "Hoodie", "Pants", "Shoes"]
     )
 
     tag_filter = st.selectbox(
-        "Farb Tag",
-        ["Alle","rot","blau","grün","gelb","schwarz","weiß"]
+        "Nach Farb-Tag filtern",
+        ["Alle", "rot", "blau", "grün", "gelb", "schwarz", "weiß"]
     )
 
     entries = load_entries(class_filter, tag_filter)
 
     if not entries:
-        st.info("Keine Fundstücke vorhanden.")
+        st.info("Keine Einträge gefunden.")
 
     else:
 
@@ -300,5 +263,3 @@ if page == "Galerie":
                 )
 
                 st.markdown('</div>', unsafe_allow_html=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
