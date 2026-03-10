@@ -15,13 +15,13 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ==================== CSS ====================
 st.markdown("""
 <style>
-/* Radialer Farbverlauf für Hintergrund */
+/* Radialer Farbverlauf */
 [data-testid="stAppViewContainer"]{
 background: radial-gradient(circle at bottom, #000033 0%, #000000 60%);
 background-attachment: fixed;
 }
 
-/* Streamlit Topbar ausblenden */
+/* Header / Footer ausblenden */
 header {visibility:hidden;}
 footer {visibility:hidden;}
 
@@ -47,21 +47,21 @@ padding-top: 50px;
 width: 200px;
 }
 
-/* Content container verschieben */
-[data-testid="stVerticalBlock"]{
-margin-left: 70px; /* Standardbreite der Sidebar */
+/* Content Container verschieben */
+main[data-testid="stAppViewContainer"] > div:first-child {
 transition: margin-left 0.3s;
+margin-left: 70px; /* Sidebar Standard */
 }
-#custom_sidebar.expanded ~ div[data-testid="stVerticalBlock"]{
-margin-left: 200px;
+#custom_sidebar.expanded ~ main[data-testid="stAppViewContainer"] > div:first-child {
+margin-left: 200px; /* Sidebar Expanded */
 }
 
-/* Hamburger */
+/* Hamburger immer oben links */
 #hamburger_btn {
 position: fixed;
 top: 10px;
 left: 10px;
-z-index: 1100;
+z-index: 1200;
 padding: 10px 15px;
 border-radius: 8px;
 background: #181818;
