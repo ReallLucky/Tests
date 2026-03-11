@@ -293,16 +293,21 @@ if page == "Galerie":
         for i,entry in enumerate(entries):
 
             with cols[i % 4]:
+                response = requests.get(entry["image_url"])
 
-                response = requests.get(entry["image_url"], stream=True)
+                try:
 
-                image = Image.open(response.raw)
+                    response = requests.get(entry["image_url"])
 
-                image = square_crop(image)
+                    image = Image.open(io.BytesIO(response.content)).convert("RGB")
 
-                st.markdown('<div class="thumbnail">', unsafe_allow_html=True)
+                    image = square_crop(image)
 
-                st.image(image, use_column_width=True)
+                    st.image(image, use_container_width=True)
+
+                except:
+
+                    st.warning("Bild konnte nicht geladen werden")
 
                 st.markdown(f"""
                 **{entry['predicted_class']}**  
@@ -347,7 +352,7 @@ if page == "Upload":
 
         image = Image.open(image_file).convert("RGB")
 
-        st.image(image, caption="Vorschau", use_column_width=True)
+        st.image(image, caption="Vorschau", use_container_width=True)
 
         predicted_class, confidence = classify_image(image)
 
@@ -430,7 +435,7 @@ if page == "Admin":
 
                 with cols[i%4]:
 
-                    st.image(entry["image_url"], use_column_width=True)
+                    st.image(entry["image_url"], use_container_width=True)
 
                     st.write("Klasse:",entry["predicted_class"])
 
