@@ -5,6 +5,7 @@ from PIL import Image, ImageOps
 from supabase import create_client
 import uuid
 import io
+import requests
 
 # =====================================================
 # CONFIG
@@ -125,6 +126,23 @@ def load_tm_model():
 model, class_names = load_tm_model()
 
 # =====================================================
+# SQUARE CROP
+# =====================================================
+
+def square_crop(image):
+
+    width, height = image.size
+
+    min_dim = min(width, height)
+
+    left = (width - min_dim) // 2
+    top = (height - min_dim) // 2
+    right = (width + min_dim) // 2
+    bottom = (height + min_dim) // 2
+
+    return image.crop((left, top, right, bottom))
+
+# =====================================================
 # IMAGE CLASSIFICATION
 # =====================================================
 
@@ -238,14 +256,14 @@ if page == "Galerie":
     st.markdown("""
     ## 👋 Willkommen bei FundTube
 
-    FundTube hilft verlorene Kleidung wiederzufinden.
+    **FundTube hilft verlorene Kleidung wiederzufinden.**
 
-    **So funktioniert es:**
+    So funktioniert es:
 
     1️⃣ Menschen laden gefundene Kleidung hoch  
     2️⃣ Eine KI erkennt automatisch die Kategorie  
     3️⃣ Ein Farb-Tag wird hinzugefügt  
-    4️⃣ Andere können sehen, dass die Kleidung gefunden wurde
+    4️⃣ Andere können sehen, dass ihre Kleidung gefunden wurde
     """)
 
     st.divider()
@@ -274,17 +292,21 @@ if page == "Galerie":
 
         for i,entry in enumerate(entries):
 
-            with cols[i%4]:
+            with cols[i % 4]:
+
+                response = requests.get(entry["image_url"], stream=True)
+
+                image = Image.open(response.raw)
+
+                image = square_crop(image)
 
                 st.markdown('<div class="thumbnail">', unsafe_allow_html=True)
 
-                st.image(entry["image_url"], use_column_width=True)
+                st.image(image, use_column_width=True)
 
                 st.markdown(f"""
-                **{entry['predicted_class']}**
-
-                Confidence: {round(entry['confidence']*100,2)} %
-
+                **{entry['predicted_class']}**  
+                Confidence: {round(entry['confidence']*100,2)} %  
                 Farbe: {entry['tag']}
                 """)
 
@@ -402,11 +424,11 @@ if page == "Admin":
 
         else:
 
-            cols = st.columns(3)
+            cols = st.columns(4)
 
             for i,entry in enumerate(entries):
 
-                with cols[i%3]:
+                with cols[i%4]:
 
                     st.image(entry["image_url"], use_column_width=True)
 
