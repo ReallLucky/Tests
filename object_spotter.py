@@ -11,11 +11,7 @@ import requests
 # CONFIG
 # =====================================================
 
-st.set_page_config(
-    page_title="FundTube",
-    page_icon="🧥",
-    layout="wide"
-)
+st.set_page_config(page_title="FundTube", layout="wide")
 
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
@@ -37,13 +33,11 @@ if "batch_size" not in st.session_state:
     st.session_state.batch_size = 12
 
 # =====================================================
-# APPLE STYLE DESIGN
+# STYLE
 # =====================================================
 
 st.markdown("""
 <style>
-
-/* BACKGROUND */
 
 [data-testid="stAppViewContainer"]{
 background: radial-gradient(circle at bottom,#000033 0%,#000000 60%);
@@ -58,46 +52,48 @@ top:0;
 left:0;
 height:100vh;
 width:70px;
-background:rgba(20,20,20,0.8);
+background:rgba(20,20,20,0.85);
 backdrop-filter: blur(20px);
 transition:0.3s;
 overflow:hidden;
 border-right:1px solid #222;
 z-index:999;
+padding-top:20px;
 }
 
 .sidebar:hover{
-width:220px;
+width:200px;
 }
 
-.sidebar-title{
+.sidebar-btn button{
+width:100%;
+background:none;
+border:none;
 color:white;
+text-align:left;
+padding:16px;
 font-size:20px;
-padding:20px;
+cursor:pointer;
 }
 
-.sidebar-item{
-display:block;
-color:white;
-padding:16px 20px;
-text-decoration:none;
-white-space:nowrap;
+.sidebar-btn button:hover{
+background:#1f1f1f;
+}
+
+.sidebar-text{
+opacity:0;
+margin-left:10px;
 transition:0.2s;
 }
 
-.sidebar-item:hover{
-background:#1f1f1f;
+.sidebar:hover .sidebar-text{
+opacity:1;
 }
 
 /* CONTENT SHIFT */
 
 .main .block-container{
 margin-left:90px;
-transition:0.3s;
-}
-
-.sidebar:hover ~ .main .block-container{
-margin-left:230px;
 }
 
 /* GALLERY */
@@ -105,7 +101,7 @@ margin-left:230px;
 .thumbnail{
 background:#181818;
 padding:10px;
-border-radius:14px;
+border-radius:12px;
 margin-bottom:20px;
 transition:0.2s;
 }
@@ -137,33 +133,33 @@ border-radius:10px;
 """, unsafe_allow_html=True)
 
 # =====================================================
-# SIDEBAR HTML
+# SIDEBAR
 # =====================================================
 
-st.markdown("""
-<div class="sidebar">
+with st.container():
 
-<div class="sidebar-title">
-FundTube
-</div>
+    st.markdown('<div class="sidebar">', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-btn">', unsafe_allow_html=True)
 
-<a class="sidebar-item" href="/?page=Galerie">🏠 Galerie</a>
-<a class="sidebar-item" href="/?page=Upload">📦 Neuer Fund</a>
-<a class="sidebar-item" href="/?page=Admin">🔐 Admin</a>
+    if st.button("🏠", key="nav_gal"):
+        st.session_state.page = "Galerie"
+        st.rerun()
 
-</div>
-""", unsafe_allow_html=True)
+    st.markdown('<span class="sidebar-text">Galerie</span>', unsafe_allow_html=True)
 
-# =====================================================
-# QUERY PARAM ROUTER
-# =====================================================
+    if st.button("📦", key="nav_upload"):
+        st.session_state.page = "Upload"
+        st.rerun()
 
-query = st.query_params
+    st.markdown('<span class="sidebar-text">Neuer Fund</span>', unsafe_allow_html=True)
 
-if "page" in query:
-    st.session_state.page = query["page"]
+    if st.button("🔐", key="nav_admin"):
+        st.session_state.page = "Admin"
+        st.rerun()
 
-page = st.session_state.page
+    st.markdown('<span class="sidebar-text">Admin</span>', unsafe_allow_html=True)
+
+    st.markdown('</div></div>', unsafe_allow_html=True)
 
 # =====================================================
 # LOAD MODEL
@@ -171,10 +167,8 @@ page = st.session_state.page
 
 @st.cache_resource
 def load_tm_model():
-
     model = load_model("keras_model.h5", compile=False)
     class_names = open("labels.txt").readlines()
-
     return model, class_names
 
 model, class_names = load_tm_model()
@@ -184,19 +178,16 @@ model, class_names = load_tm_model()
 # =====================================================
 
 def square_crop(image):
-
-    w,h = image.size
-    m = min(w,h)
-
+    w,h=image.size
+    m=min(w,h)
     left=(w-m)//2
     top=(h-m)//2
     right=(w+m)//2
     bottom=(h+m)//2
-
     return image.crop((left,top,right,bottom))
 
 # =====================================================
-# IMAGE CLASSIFICATION
+# CLASSIFY IMAGE
 # =====================================================
 
 def classify_image(image):
@@ -210,11 +201,13 @@ def classify_image(image):
     normalized=(image_array.astype(np.float32)/127.5)-1
 
     data=np.ndarray((1,224,224,3),dtype=np.float32)
+
     data[0]=normalized
 
     prediction=model.predict(data)
 
     index=np.argmax(prediction)
+
     confidence=float(prediction[0][index])
 
     predicted_class=class_names[index][2:].strip()
@@ -222,7 +215,7 @@ def classify_image(image):
     return predicted_class,confidence
 
 # =====================================================
-# SUPABASE STORAGE
+# STORAGE
 # =====================================================
 
 def upload_image(image,predicted_class):
@@ -293,38 +286,10 @@ def delete_entry(entry):
     supabase.table("fundstuecke").delete().eq("id",entry["id"]).execute()
 
 # =====================================================
-# GALERIE
+# GALLERY RENDER
 # =====================================================
 
-if page=="Galerie":
-
-    st.title("👋 Willkommen bei FundTube")
-
-    st.write(
-    """
-    **FundTube hilft verlorene Kleidung wiederzufinden**
-
-    1️⃣ Menschen laden gefundene Kleidung hoch  
-    2️⃣ KI erkennt automatisch Kategorie  
-    3️⃣ Farb-Tag wird hinzugefügt  
-    4️⃣ Besitzer können ihre Kleidung wiederfinden
-    """)
-
-    st.divider()
-
-    class_filter=st.selectbox(
-        "Kategorie",
-        ["Alle","Hoodie","Pants","Shoes"]
-    )
-
-    tag_filter=st.selectbox(
-        "Farb Tag",
-        ["Alle","rot","blau","grün","gelb","schwarz","weiß"]
-    )
-
-    entries=load_entries(class_filter,tag_filter)
-
-    entries=entries[:st.session_state.batch_size]
+def render_gallery(entries,admin=False):
 
     cols=st.columns(4)
 
@@ -335,7 +300,6 @@ if page=="Galerie":
             try:
 
                 response=requests.get(entry["image_url"])
-
                 image=Image.open(io.BytesIO(response.content))
 
                 image=square_crop(image)
@@ -360,6 +324,48 @@ if page=="Galerie":
 
             st.write("Farbe:",entry["tag"])
 
+            if admin:
+
+                if st.button("🗑 Löschen",key=f"del_{entry['id']}"):
+
+                    delete_entry(entry)
+                    st.rerun()
+
+# =====================================================
+# PAGE ROUTER
+# =====================================================
+
+page=st.session_state.page
+
+# =====================================================
+# GALERIE
+# =====================================================
+
+if page=="Galerie":
+
+    st.title("👋 Willkommen bei FundTube")
+
+    st.write("""
+    **FundTube hilft verlorene Kleidung wiederzufinden**
+
+    1️⃣ Kleidung wird hochgeladen  
+    2️⃣ KI erkennt Kategorie  
+    3️⃣ Farbtag wird hinzugefügt  
+    4️⃣ Besitzer können ihre Kleidung wiederfinden
+    """)
+
+    st.divider()
+
+    class_filter=st.selectbox("Kategorie",["Alle","Hoodie","Pants","Shoes"])
+
+    tag_filter=st.selectbox("Farb Tag",["Alle","rot","blau","grün","gelb","schwarz","weiß"])
+
+    entries=load_entries(class_filter,tag_filter)
+
+    entries=entries[:st.session_state.batch_size]
+
+    render_gallery(entries)
+
     if len(load_entries())>st.session_state.batch_size:
 
         if st.button("Mehr laden"):
@@ -381,10 +387,7 @@ if page=="Upload":
 
     with tab1:
 
-        uploaded=st.file_uploader(
-            "Bild auswählen",
-            type=["jpg","jpeg","png"]
-        )
+        uploaded=st.file_uploader("Bild auswählen",type=["jpg","jpeg","png"])
 
         if uploaded:
             image_file=uploaded
@@ -410,23 +413,15 @@ if page=="Upload":
 
         st.progress(confidence)
 
-        tag=st.selectbox(
-            "Farb Tag",
-            ["rot","blau","grün","gelb","schwarz","weiß"]
-        )
+        tag=st.selectbox("Farb Tag",["rot","blau","grün","gelb","schwarz","weiß"])
 
         if st.button("Speichern"):
 
             url=upload_image(image,predicted_class)
 
-            save_metadata(
-                url,
-                predicted_class,
-                confidence,
-                tag
-            )
+            save_metadata(url,predicted_class,confidence,tag)
 
-            st.success("Gespeichert!")
+            st.success("Fundstück gespeichert!")
 
 # =====================================================
 # ADMIN
@@ -438,10 +433,7 @@ if page=="Admin":
 
     if not st.session_state.admin_logged_in:
 
-        password=st.text_input(
-            "Admin Passwort",
-            type="password"
-        )
+        password=st.text_input("Admin Passwort",type="password")
 
         if st.button("Login"):
 
@@ -463,19 +455,4 @@ if page=="Admin":
 
         entries=load_entries()
 
-        cols=st.columns(4)
-
-        for i,entry in enumerate(entries):
-
-            with cols[i%4]:
-
-                st.image(entry["image_url"],use_container_width=True)
-
-                st.write(entry["predicted_class"])
-                st.write(entry["tag"])
-
-                if st.button("🗑",key=entry["id"]):
-
-                    delete_entry(entry)
-
-                    st.rerun()
+        render_gallery(entries,admin=True)
