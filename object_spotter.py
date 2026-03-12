@@ -65,28 +65,41 @@ padding-top:20px;
 width:200px;
 }
 
-.sidebar-btn button{
-width:100%;
-background:none;
-border:none;
-color:white;
-text-align:left;
-padding:16px;
-font-size:20px;
-cursor:pointer;
+.sidebar-nav{
+display:flex;
+flex-direction:column;
 }
 
-.sidebar-btn button:hover{
+.sidebar-item{
+display:flex;
+align-items:center;
+color:white;
+background:none;
+border:none;
+width:100%;
+padding:16px;
+font-size:18px;
+cursor:pointer;
+text-align:left;
+}
+
+.sidebar-item:hover{
 background:#1f1f1f;
 }
 
-.sidebar-text{
-opacity:0;
-margin-left:10px;
-transition:0.2s;
+.sidebar-icon{
+font-size:20px;
+width:24px;
 }
 
-.sidebar:hover .sidebar-text{
+.sidebar-label{
+margin-left:12px;
+opacity:0;
+transition:0.2s;
+white-space:nowrap;
+}
+
+.sidebar:hover .sidebar-label{
 opacity:1;
 }
 
@@ -136,30 +149,30 @@ border-radius:10px;
 # SIDEBAR
 # =====================================================
 
-with st.container():
+st.markdown("""
+<div class="sidebar">
 
-    st.markdown('<div class="sidebar">', unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-btn">', unsafe_allow_html=True)
+<div class="sidebar-nav">
 
-    if st.button("🏠", key="nav_gal"):
-        st.session_state.page = "Galerie"
-        st.rerun()
+<button class="sidebar-item" onclick="window.location.search='?page=Galerie'">
+<span class="sidebar-icon">🏠</span>
+<span class="sidebar-label">Galerie</span>
+</button>
 
-    st.markdown('<span class="sidebar-text">Galerie</span>', unsafe_allow_html=True)
+<button class="sidebar-item" onclick="window.location.search='?page=Upload'">
+<span class="sidebar-icon">📦</span>
+<span class="sidebar-label">Neuer Fund</span>
+</button>
 
-    if st.button("📦", key="nav_upload"):
-        st.session_state.page = "Upload"
-        st.rerun()
+<button class="sidebar-item" onclick="window.location.search='?page=Admin'">
+<span class="sidebar-icon">🔐</span>
+<span class="sidebar-label">Admin</span>
+</button>
 
-    st.markdown('<span class="sidebar-text">Neuer Fund</span>', unsafe_allow_html=True)
+</div>
 
-    if st.button("🔐", key="nav_admin"):
-        st.session_state.page = "Admin"
-        st.rerun()
-
-    st.markdown('<span class="sidebar-text">Admin</span>', unsafe_allow_html=True)
-
-    st.markdown('</div></div>', unsafe_allow_html=True)
+</div>
+""", unsafe_allow_html=True)
 
 # =====================================================
 # LOAD MODEL
@@ -330,6 +343,15 @@ def render_gallery(entries,admin=False):
 
                     delete_entry(entry)
                     st.rerun()
+
+# =====================================================
+# QUERY PARAM ROUTER
+# =====================================================
+
+params = st.query_params
+
+if "page" in params:
+    st.session_state.page = params["page"]
 
 # =====================================================
 # PAGE ROUTER
