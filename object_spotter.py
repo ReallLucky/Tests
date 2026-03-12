@@ -154,20 +154,20 @@ st.markdown("""
 
 <div class="sidebar-nav">
 
-<button class="sidebar-item" onclick="window.location.search='?page=Galerie'">
+<a class="sidebar-item" href="?page=Galerie">
 <span class="sidebar-icon">🏠</span>
 <span class="sidebar-label">Galerie</span>
-</button>
+</a>
 
-<button class="sidebar-item" onclick="window.location.search='?page=Upload'">
+<a class="sidebar-item" href="?page=Upload">
 <span class="sidebar-icon">📦</span>
 <span class="sidebar-label">Neuer Fund</span>
-</button>
+</a>
 
-<button class="sidebar-item" onclick="window.location.search='?page=Admin'">
+<a class="sidebar-item" href="?page=Admin">
 <span class="sidebar-icon">🔐</span>
 <span class="sidebar-label">Admin</span>
-</button>
+</a>
 
 </div>
 
