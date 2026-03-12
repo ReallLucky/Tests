@@ -11,14 +11,17 @@ import requests
 # CONFIG
 # =====================================================
 
-st.set_page_config(page_title="FundTube", layout="wide")
+st.set_page_config(
+    page_title="FundTube",
+    page_icon="🧥",
+    layout="wide"
+)
 
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
+ADMIN_PASSWORD = st.secrets["admin_password"]
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-ADMIN_PASSWORD = "fundtube_admin_2026"
 
 # =====================================================
 # SESSION STATE
@@ -27,57 +30,103 @@ ADMIN_PASSWORD = "fundtube_admin_2026"
 if "page" not in st.session_state:
     st.session_state.page = "Galerie"
 
-if "sidebar_state" not in st.session_state:
-    st.session_state.sidebar_state = True
-
 if "admin_logged_in" not in st.session_state:
     st.session_state.admin_logged_in = False
 
+if "batch_size" not in st.session_state:
+    st.session_state.batch_size = 12
+
 # =====================================================
-# CSS DESIGN
+# APPLE STYLE DESIGN
 # =====================================================
 
 st.markdown("""
 <style>
 
+/* BACKGROUND */
+
 [data-testid="stAppViewContainer"]{
-background: radial-gradient(circle at bottom, #000033 0%, #000000 60%);
-background-repeat:no-repeat;
+background: radial-gradient(circle at bottom,#000033 0%,#000000 60%);
 background-attachment:fixed;
 }
 
-section[data-testid="stSidebar"]{
-background:#0f0f0f;
+/* SIDEBAR */
+
+.sidebar{
+position:fixed;
+top:0;
+left:0;
+height:100vh;
+width:70px;
+background:rgba(20,20,20,0.8);
+backdrop-filter: blur(20px);
+transition:0.3s;
+overflow:hidden;
 border-right:1px solid #222;
+z-index:999;
 }
 
-.sidebar-btn button{
-width:100%;
-display:block;
-background:none;
-border:none;
+.sidebar:hover{
+width:220px;
+}
+
+.sidebar-title{
 color:white;
-text-align:left;
-padding:12px 15px;
-font-size:16px;
-border-radius:8px;
-margin-bottom:5px;
+font-size:20px;
+padding:20px;
 }
 
-.sidebar-btn button:hover{
+.sidebar-item{
+display:block;
+color:white;
+padding:16px 20px;
+text-decoration:none;
+white-space:nowrap;
+transition:0.2s;
+}
+
+.sidebar-item:hover{
 background:#1f1f1f;
 }
+
+/* CONTENT SHIFT */
+
+.main .block-container{
+margin-left:90px;
+transition:0.3s;
+}
+
+.sidebar:hover ~ .main .block-container{
+margin-left:230px;
+}
+
+/* GALLERY */
 
 .thumbnail{
 background:#181818;
 padding:10px;
-border-radius:12px;
+border-radius:14px;
 margin-bottom:20px;
 transition:0.2s;
 }
 
 .thumbnail:hover{
 transform:scale(1.03);
+}
+
+/* CONFIDENCE BAR */
+
+.conf-bar{
+height:8px;
+background:#333;
+border-radius:4px;
+overflow:hidden;
+margin-top:5px;
+}
+
+.conf-fill{
+height:8px;
+background:linear-gradient(90deg,#00c6ff,#0072ff);
 }
 
 img{
@@ -88,59 +137,63 @@ border-radius:10px;
 """, unsafe_allow_html=True)
 
 # =====================================================
-# SIDEBAR
+# SIDEBAR HTML
 # =====================================================
 
-if st.button("☰"):
-    st.session_state.sidebar_state = not st.session_state.sidebar_state
+st.markdown("""
+<div class="sidebar">
 
-if st.session_state.sidebar_state:
+<div class="sidebar-title">
+FundTube
+</div>
 
-    with st.sidebar:
+<a class="sidebar-item" href="/?page=Galerie">🏠 Galerie</a>
+<a class="sidebar-item" href="/?page=Upload">📦 Neuer Fund</a>
+<a class="sidebar-item" href="/?page=Admin">🔐 Admin</a>
 
-        st.title("FundTube")
-
-        st.markdown('<div class="sidebar-btn">', unsafe_allow_html=True)
-
-        if st.button("🏠 Galerie"):
-            st.session_state.page = "Galerie"
-
-        if st.button("📦 Neuer Fund"):
-            st.session_state.page = "Upload"
-
-        if st.button("🔐 Admin"):
-            st.session_state.page = "Admin"
-
-        st.markdown('</div>', unsafe_allow_html=True)
+</div>
+""", unsafe_allow_html=True)
 
 # =====================================================
-# MODEL LADEN
+# QUERY PARAM ROUTER
+# =====================================================
+
+query = st.query_params
+
+if "page" in query:
+    st.session_state.page = query["page"]
+
+page = st.session_state.page
+
+# =====================================================
+# LOAD MODEL
 # =====================================================
 
 @st.cache_resource
 def load_tm_model():
+
     model = load_model("keras_model.h5", compile=False)
-    class_names = open("labels.txt", "r").readlines()
+    class_names = open("labels.txt").readlines()
+
     return model, class_names
 
 model, class_names = load_tm_model()
 
 # =====================================================
-# SQUARE CROP
+# IMAGE HELPERS
 # =====================================================
 
 def square_crop(image):
 
-    width, height = image.size
+    w,h = image.size
+    m = min(w,h)
 
-    min_dim = min(width, height)
+    left=(w-m)//2
+    top=(h-m)//2
+    right=(w+m)//2
+    bottom=(h+m)//2
 
-    left = (width - min_dim) // 2
-    top = (height - min_dim) // 2
-    right = (width + min_dim) // 2
-    bottom = (height + min_dim) // 2
-
-    return image.crop((left, top, right, bottom))
+    return image.crop((left,top,right,bottom))
 
 # =====================================================
 # IMAGE CLASSIFICATION
@@ -148,39 +201,37 @@ def square_crop(image):
 
 def classify_image(image):
 
-    size = (224,224)
+    size=(224,224)
 
-    image = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
+    image = ImageOps.fit(image,size,Image.Resampling.LANCZOS)
 
-    image_array = np.asarray(image)
+    image_array=np.asarray(image)
 
-    normalized = (image_array.astype(np.float32)/127.5)-1
+    normalized=(image_array.astype(np.float32)/127.5)-1
 
-    data = np.ndarray((1,224,224,3), dtype=np.float32)
+    data=np.ndarray((1,224,224,3),dtype=np.float32)
+    data[0]=normalized
 
-    data[0] = normalized
+    prediction=model.predict(data)
 
-    prediction = model.predict(data)
+    index=np.argmax(prediction)
+    confidence=float(prediction[0][index])
 
-    index = np.argmax(prediction)
+    predicted_class=class_names[index][2:].strip()
 
-    confidence = float(prediction[0][index])
-
-    predicted_class = class_names[index][2:].strip()
-
-    return predicted_class, confidence
+    return predicted_class,confidence
 
 # =====================================================
-# IMAGE UPLOAD
+# SUPABASE STORAGE
 # =====================================================
 
-def upload_image(image, predicted_class):
+def upload_image(image,predicted_class):
 
-    filename = f"{predicted_class}/{uuid.uuid4()}.jpg"
+    filename=f"{predicted_class}/{uuid.uuid4()}.jpg"
 
-    buffer = io.BytesIO()
+    buffer=io.BytesIO()
 
-    image.save(buffer, format="JPEG")
+    image.save(buffer,format="JPEG")
 
     buffer.seek(0)
 
@@ -190,17 +241,17 @@ def upload_image(image, predicted_class):
         {"content-type":"image/jpeg"}
     )
 
-    public_url = supabase.storage.from_("fundbilder").get_public_url(filename)
+    url=supabase.storage.from_("fundbilder").get_public_url(filename)
 
-    return public_url
+    return url
 
 # =====================================================
-# METADATA SPEICHERN
+# SAVE METADATA
 # =====================================================
 
-def save_metadata(url, predicted_class, confidence, tag):
+def save_metadata(url,predicted_class,confidence,tag):
 
-    data = {
+    data={
         "image_url":url,
         "predicted_class":predicted_class,
         "confidence":confidence,
@@ -210,199 +261,193 @@ def save_metadata(url, predicted_class, confidence, tag):
     supabase.table("fundstuecke").insert(data).execute()
 
 # =====================================================
-# EINTRÄGE LADEN
+# LOAD ENTRIES
 # =====================================================
 
-def load_entries(class_filter=None, tag_filter=None):
+def load_entries(class_filter=None,tag_filter=None):
 
-    query = supabase.table("fundstuecke").select("*").order("created_at", desc=True)
+    query=supabase.table("fundstuecke").select("*").order("created_at",desc=True)
 
-    if class_filter and class_filter != "Alle":
-        query = query.eq("predicted_class", class_filter)
+    if class_filter and class_filter!="Alle":
+        query=query.eq("predicted_class",class_filter)
 
-    if tag_filter and tag_filter != "Alle":
-        query = query.eq("tag", tag_filter)
+    if tag_filter and tag_filter!="Alle":
+        query=query.eq("tag",tag_filter)
 
-    response = query.execute()
+    res=query.execute()
 
-    return response.data
+    return res.data
 
 # =====================================================
-# EINTRAG LÖSCHEN
+# DELETE ENTRY
 # =====================================================
 
 def delete_entry(entry):
 
-    image_url = entry["image_url"]
+    image_url=entry["image_url"]
 
-    path = image_url.split("/fundbilder/")[1]
+    path=image_url.split("/fundbilder/")[1]
 
     supabase.storage.from_("fundbilder").remove([path])
 
-    supabase.table("fundstuecke").delete().eq("id", entry["id"]).execute()
-
-# =====================================================
-# PAGE ROUTER
-# =====================================================
-
-page = st.session_state.page
+    supabase.table("fundstuecke").delete().eq("id",entry["id"]).execute()
 
 # =====================================================
 # GALERIE
 # =====================================================
 
-if page == "Galerie":
+if page=="Galerie":
 
-    st.markdown("""
-    ## 👋 Willkommen bei FundTube
+    st.title("👋 Willkommen bei FundTube")
 
-    **FundTube hilft verlorene Kleidung wiederzufinden.**
-
-    So funktioniert es:
+    st.write(
+    """
+    **FundTube hilft verlorene Kleidung wiederzufinden**
 
     1️⃣ Menschen laden gefundene Kleidung hoch  
-    2️⃣ Eine KI erkennt automatisch die Kategorie  
-    3️⃣ Ein Farb-Tag wird hinzugefügt  
-    4️⃣ Andere können sehen, dass ihre Kleidung gefunden wurde
+    2️⃣ KI erkennt automatisch Kategorie  
+    3️⃣ Farb-Tag wird hinzugefügt  
+    4️⃣ Besitzer können ihre Kleidung wiederfinden
     """)
 
     st.divider()
 
-    st.header("🖼 Fundstücke")
-
-    class_filter = st.selectbox(
+    class_filter=st.selectbox(
         "Kategorie",
         ["Alle","Hoodie","Pants","Shoes"]
     )
 
-    tag_filter = st.selectbox(
+    tag_filter=st.selectbox(
         "Farb Tag",
         ["Alle","rot","blau","grün","gelb","schwarz","weiß"]
     )
 
-    entries = load_entries(class_filter, tag_filter)
+    entries=load_entries(class_filter,tag_filter)
 
-    if not entries:
+    entries=entries[:st.session_state.batch_size]
 
-        st.info("Keine Fundstücke vorhanden")
+    cols=st.columns(4)
 
-    else:
+    for i,entry in enumerate(entries):
 
-        cols = st.columns(4)
+        with cols[i%4]:
 
-        for i,entry in enumerate(entries):
+            try:
 
-            with cols[i % 4]:
-                response = requests.get(entry["image_url"])
+                response=requests.get(entry["image_url"])
 
-                try:
+                image=Image.open(io.BytesIO(response.content))
 
-                    response = requests.get(entry["image_url"])
+                image=square_crop(image)
 
-                    image = Image.open(io.BytesIO(response.content)).convert("RGB")
+                st.image(image,use_container_width=True)
 
-                    image = square_crop(image)
+            except:
 
-                    st.image(image, use_container_width=True)
+                st.warning("Bild konnte nicht geladen werden")
 
-                except:
+            conf=int(entry["confidence"]*100)
 
-                    st.warning("Bild konnte nicht geladen werden")
+            st.markdown(f"**{entry['predicted_class']}**")
 
-                st.markdown(f"""
-                **{entry['predicted_class']}**  
-                Confidence: {round(entry['confidence']*100,2)} %  
-                Farbe: {entry['tag']}
-                """)
+            st.markdown(f"""
+            <div class="conf-bar">
+            <div class="conf-fill" style="width:{conf}%"></div>
+            </div>
+            """,unsafe_allow_html=True)
 
-                st.markdown('</div>', unsafe_allow_html=True)
+            st.write(conf,"%")
+
+            st.write("Farbe:",entry["tag"])
+
+    if len(load_entries())>st.session_state.batch_size:
+
+        if st.button("Mehr laden"):
+
+            st.session_state.batch_size+=12
+            st.rerun()
 
 # =====================================================
-# UPLOAD PAGE
+# UPLOAD
 # =====================================================
 
-if page == "Upload":
+if page=="Upload":
 
-    st.header("📦 Neues Fundstück")
+    st.title("📦 Neues Fundstück")
 
-    upload_tab, camera_tab = st.tabs(
-        ["📤 Datei hochladen","📷 Kamera"]
-    )
+    tab1,tab2=st.tabs(["Upload","Kamera"])
 
-    image_file = None
+    image_file=None
 
-    with upload_tab:
+    with tab1:
 
-        uploaded_file = st.file_uploader(
+        uploaded=st.file_uploader(
             "Bild auswählen",
             type=["jpg","jpeg","png"]
         )
 
-        if uploaded_file:
-            image_file = uploaded_file
+        if uploaded:
+            image_file=uploaded
 
-    with camera_tab:
+    with tab2:
 
-        camera_file = st.camera_input("Foto aufnehmen")
+        camera=st.camera_input("Foto aufnehmen")
 
-        if camera_file:
-            image_file = camera_file
+        if camera:
+            image_file=camera
 
     if image_file:
 
-        image = Image.open(image_file).convert("RGB")
+        image=Image.open(image_file).convert("RGB")
 
-        st.image(image, caption="Vorschau", use_container_width=True)
+        st.image(image,use_container_width=True)
 
-        predicted_class, confidence = classify_image(image)
+        predicted_class,confidence=classify_image(image)
 
-        st.subheader("🤖 KI-Erkennung")
+        st.subheader("🤖 KI Ergebnis")
 
-        st.write("Klasse:", predicted_class)
+        st.write("Klasse:",predicted_class)
 
-        st.write("Confidence:", round(confidence*100,2), "%")
+        st.progress(confidence)
 
-        tag = st.selectbox(
-            "Farb Tag auswählen",
+        tag=st.selectbox(
+            "Farb Tag",
             ["rot","blau","grün","gelb","schwarz","weiß"]
         )
 
         if st.button("Speichern"):
 
-            image_url = upload_image(image, predicted_class)
+            url=upload_image(image,predicted_class)
 
             save_metadata(
-                image_url,
+                url,
                 predicted_class,
                 confidence,
                 tag
             )
 
-            st.success("Fundstück gespeichert!")
+            st.success("Gespeichert!")
 
 # =====================================================
-# ADMIN PAGE
+# ADMIN
 # =====================================================
 
-if page == "Admin":
+if page=="Admin":
 
-    st.header("🔐 Admin Bereich")
+    st.title("🔐 Admin")
 
     if not st.session_state.admin_logged_in:
 
-        password = st.text_input(
+        password=st.text_input(
             "Admin Passwort",
             type="password"
         )
 
         if st.button("Login"):
 
-            if password == ADMIN_PASSWORD:
+            if password==ADMIN_PASSWORD:
 
-                st.session_state.admin_logged_in = True
-
-                st.success("Login erfolgreich")
-
+                st.session_state.admin_logged_in=True
                 st.rerun()
 
             else:
@@ -411,40 +456,26 @@ if page == "Admin":
 
     else:
 
-        st.success("Admin angemeldet")
-
         if st.button("Logout"):
 
-            st.session_state.admin_logged_in = False
-
+            st.session_state.admin_logged_in=False
             st.rerun()
 
-        st.divider()
+        entries=load_entries()
 
-        entries = load_entries()
+        cols=st.columns(4)
 
-        if not entries:
+        for i,entry in enumerate(entries):
 
-            st.info("Keine Einträge")
+            with cols[i%4]:
 
-        else:
+                st.image(entry["image_url"],use_container_width=True)
 
-            cols = st.columns(4)
+                st.write(entry["predicted_class"])
+                st.write(entry["tag"])
 
-            for i,entry in enumerate(entries):
+                if st.button("🗑",key=entry["id"]):
 
-                with cols[i%4]:
+                    delete_entry(entry)
 
-                    st.image(entry["image_url"], use_container_width=True)
-
-                    st.write("Klasse:",entry["predicted_class"])
-
-                    st.write("Tag:",entry["tag"])
-
-                    if st.button("🗑 Löschen", key=f"delete_{entry['id']}"):
-
-                        delete_entry(entry)
-
-                        st.warning("Eintrag gelöscht")
-
-                        st.rerun()
+                    st.rerun()
