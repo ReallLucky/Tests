@@ -149,30 +149,27 @@ border-radius:10px;
 # SIDEBAR
 # =====================================================
 
-st.markdown("""
-<div class="sidebar">
+st.markdown('<div class="sidebar"><div class="sidebar-nav">', unsafe_allow_html=True)
 
-<div class="sidebar-nav">
+if st.button("🏠", key="nav_galerie"):
+    st.session_state.page = "Galerie"
+    st.rerun()
 
-<a class="sidebar-item" href="?page=Galerie">
-<span class="sidebar-icon">🏠</span>
-<span class="sidebar-label">Galerie</span>
-</a>
+st.markdown('<span class="sidebar-label">Galerie</span>', unsafe_allow_html=True)
 
-<a class="sidebar-item" href="?page=Upload">
-<span class="sidebar-icon">📦</span>
-<span class="sidebar-label">Neuer Fund</span>
-</a>
+if st.button("📦", key="nav_upload"):
+    st.session_state.page = "Upload"
+    st.rerun()
 
-<a class="sidebar-item" href="?page=Admin">
-<span class="sidebar-icon">🔐</span>
-<span class="sidebar-label">Admin</span>
-</a>
+st.markdown('<span class="sidebar-label">Neuer Fund</span>', unsafe_allow_html=True)
 
-</div>
+if st.button("🔐", key="nav_admin"):
+    st.session_state.page = "Admin"
+    st.rerun()
 
-</div>
-""", unsafe_allow_html=True)
+st.markdown('<span class="sidebar-label">Admin</span>', unsafe_allow_html=True)
+
+st.markdown('</div></div>', unsafe_allow_html=True)
 
 # =====================================================
 # LOAD MODEL
