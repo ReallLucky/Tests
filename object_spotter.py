@@ -74,6 +74,11 @@ font-weight:700;
 font-size:18px;
 }
 
+[data-testid="stAppViewContainer"]{
+    background: radial-gradient(circle at bottom,#000033 0%,#000000 60%);
+    background-attachment: fixed;
+}
+
 /* RESPONSIVE SWITCH */
 
 @media (max-aspect-ratio: 1/1){
