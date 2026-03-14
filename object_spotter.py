@@ -468,7 +468,7 @@ def render_gallery(entries, admin=False):
                 response = requests.get(entry["image_url"])
                 image = Image.open(io.BytesIO(response.content))
                 image = square_crop(image)
-                st.image(image, use_container_width=True)
+                st.image(image, width="stretch")
             except:
                 st.warning("Bild konnte nicht geladen werden")
 
@@ -573,7 +573,7 @@ if page == "Upload":
 
     if image_file:
         image = Image.open(image_file).convert("RGB")
-        st.image(image, use_container_width=True)
+        st.image(image, width="stretch")
         predicted_class, confidence = classify_image(image)
         st.subheader("🤖 KI Ergebnis")
         st.write("Klasse:", predicted_class)
