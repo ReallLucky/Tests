@@ -149,27 +149,51 @@ border-radius:10px;
 # SIDEBAR
 # =====================================================
 
-st.markdown('<div class="sidebar"><div class="sidebar-nav">', unsafe_allow_html=True)
+with st.sidebar:
 
-if st.button("🏠", key="nav_galerie"):
-    st.session_state.page = "Galerie"
-    st.rerun()
+    st.markdown("""
+    <style>
+    section[data-testid="stSidebar"]{
+        width:70px !important;
+        transition:0.3s;
+        overflow:hidden;
+    }
 
-st.markdown('<span class="sidebar-label">Galerie</span>', unsafe_allow_html=True)
+    section[data-testid="stSidebar"]:hover{
+        width:200px !important;
+    }
 
-if st.button("📦", key="nav_upload"):
-    st.session_state.page = "Upload"
-    st.rerun()
+    .sidebar-label{
+        margin-left:10px;
+        opacity:0;
+        transition:0.2s;
+        white-space:nowrap;
+    }
 
-st.markdown('<span class="sidebar-label">Neuer Fund</span>', unsafe_allow_html=True)
+    section[data-testid="stSidebar"]:hover .sidebar-label{
+        opacity:1;
+    }
 
-if st.button("🔐", key="nav_admin"):
-    st.session_state.page = "Admin"
-    st.rerun()
+    button[kind="secondary"]{
+        display:flex;
+        align-items:center;
+        justify-content:flex-start;
+        gap:6px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-st.markdown('<span class="sidebar-label">Admin</span>', unsafe_allow_html=True)
+    if st.button("🏠  Galerie", key="nav_galerie"):
+        st.session_state.page = "Galerie"
+        st.rerun()
 
-st.markdown('</div></div>', unsafe_allow_html=True)
+    if st.button("📦  Neuer Fund", key="nav_upload"):
+        st.session_state.page = "Upload"
+        st.rerun()
+
+    if st.button("🔐  Admin", key="nav_admin"):
+        st.session_state.page = "Admin"
+        st.rerun()
 
 # =====================================================
 # LOAD MODEL
