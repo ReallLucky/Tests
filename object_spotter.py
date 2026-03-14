@@ -27,7 +27,7 @@ from email.mime.multipart import MIMEMultipart
 # CONFIG
 # =====================================================
 
-st.set_page_config(page_title="FundTube", layout="wide")
+st.set_page_config(page_title="Lost&Found", layout="wide")
 
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
@@ -69,15 +69,15 @@ def send_email(entry):
     smtp_port = int(st.secrets["email"].get("smtp_port", 587))
 
     # Prepare email content
-    subject = "FundTube: Ihr Fundstück wurde gefunden!"
+    subject = "Lost&Found: Ihr Fundstück wurde gefunden!"
     image_url = entry.get("image_url", "")
     message_text = (
         "Hallo,\n\n"
-        "Ihr Fundstück wurde auf FundTube gefunden! "
+        "Ihr Fundstück wurde auf Lost&Found gefunden! "
         "Hier ist der Link zum Bild:\n"
         f"{image_url}\n\n"
         "Falls Sie noch Fragen haben, antworten Sie bitte auf diese Email.\n\n"
-        "Viele Grüße,\nDas FundTube Team"
+        "Viele Grüße,\nDas Lost&Found Team"
     )
 
     msg = MIMEMultipart()
@@ -517,10 +517,10 @@ page=st.session_state.page
 
 if page=="Galerie":
 
-    st.title("👋 Willkommen bei FundTube")
+    st.title("👋 Willkommen bei Lost&Found")
 
     st.write("""
-    **FundTube hilft verlorene Kleidung wiederzufinden**
+    **Lost&Found hilft verlorene Kleidung wiederzufinden**
 
     1️⃣ Kleidung wird hochgeladen  
     2️⃣ KI erkennt Kategorie  
