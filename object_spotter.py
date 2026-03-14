@@ -32,15 +32,32 @@ if "admin_logged_in" not in st.session_state:
 if "batch_size" not in st.session_state:
     st.session_state.batch_size = 12
 
+if "screen_width" not in st.session_state:
+    st.session_state.screen_width = 1024  # default fallback
+
 # sync page from URL
 params = st.query_params
 if "page" in params:
     st.session_state.page = params["page"]
 
 # =====================================================
+# HELPER FUNCTION TO DETERMINE TOPBAR USAGE
+# =====================================================
+
+def should_use_topbar():
+    # Approximate threshold for screen width to switch layout
+    threshold_width = 500
+    # Use stored screen width if available
+    width = st.session_state.screen_width
+    if width < threshold_width:
+        return True
+    return False
+
+# =====================================================
 # STYLE
 # =====================================================
 
+# Base CSS
 st.markdown("""
 <style>
 /* HIDE STREAMLIT DEFAULT UI */
@@ -202,7 +219,27 @@ border-radius:10px;
 """, unsafe_allow_html=True)
 
 # =====================================================
-# CUSTOM SIDEBAR
+# CONDITIONAL STYLE FOR TOPBAR / SIDEBAR
+# =====================================================
+
+if should_use_topbar():
+    st.markdown("""
+    <style>
+    .topbar{
+        display:flex !important;
+    }
+    .sidebar{
+        display:none !important;
+    }
+    .main .block-container{
+        margin-left:0 !important;
+        margin-top:70px !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# =====================================================
+# CUSTOM SIDEBAR / TOPBAR
 # =====================================================
 
 st.markdown("""
@@ -399,7 +436,7 @@ def render_gallery(entries,admin=False):
 
             if admin:
 
-                c1, c2 = st.columns([3,1])
+                c1, c2 = st.columns([1, 0.2])
 
                 with c1:
                     st.write("Farbe:", entry["tag"])
@@ -509,9 +546,9 @@ if page=="Upload":
 # ADMIN
 # =====================================================
 
-if page=="Admin":
+header_left, header_right = st.columns([1,0.2])
 
-    header_left, header_right = st.columns([6,1])
+if page=="Admin":
 
     with header_left:
         st.title("🔐 Admin")
