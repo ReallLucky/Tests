@@ -519,14 +519,18 @@ if page=="Galerie":
 
     st.title("👋 Willkommen bei Lost&Found")
 
-    st.write("""
-    **Lost&Found hilft verlorene Kleidung wiederzufinden**
-
-    1️⃣ Kleidung wird hochgeladen  
-    2️⃣ KI erkennt Kategorie  
-    3️⃣ Farbtag wird hinzugefügt  
-    4️⃣ Besitzer können ihre Kleidung wiederfinden
-    """)
+    st.markdown(
+        """
+        <div style="text-align:center">
+        <strong>Lost&Found hilft verlorene Kleidung wiederzufinden</strong><br><br>
+        1️⃣ Kleidung wird hochgeladen<br>
+        2️⃣ KI erkennt Kategorie<br>
+        3️⃣ Farbtag wird hinzugefügt<br>
+        4️⃣ Besitzer können ihre Kleidung wiederfinden
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.divider()
 
