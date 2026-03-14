@@ -32,6 +32,11 @@ if "admin_logged_in" not in st.session_state:
 if "batch_size" not in st.session_state:
     st.session_state.batch_size = 12
 
+# sync page from URL
+params = st.query_params
+if "page" in params:
+    st.session_state.page = params["page"]
+
 # =====================================================
 # STYLE
 # =====================================================
@@ -52,8 +57,8 @@ top:0;
 left:0;
 height:100vh;
 width:70px;
-background:rgba(20,20,20,0.9);
-backdrop-filter: blur(20px);
+background:rgba(20,20,20,0.85);
+backdrop-filter:blur(20px);
 transition:0.3s;
 overflow:hidden;
 border-right:1px solid #222;
@@ -62,34 +67,36 @@ padding-top:20px;
 }
 
 .sidebar:hover{
-width:200px;
+width:210px;
 }
 
-.sidebar-button{
-width:100%;
+.sidebar-item{
 display:flex;
 align-items:center;
-border:none;
-background:none;
+gap:14px;
 color:white;
-font-size:18px;
-padding:16px;
-cursor:pointer;
+text-decoration:none;
+font-size:16px;
+padding:14px 18px;
+border-radius:10px;
+margin:4px 8px;
+transition:0.2s;
 }
 
-.sidebar-button:hover{
+.sidebar-item:hover{
 background:#1f1f1f;
 }
 
 .sidebar-icon{
-width:30px;
 font-size:20px;
+width:28px;
+text-align:center;
 }
 
 .sidebar-text{
 opacity:0;
-transition:0.2s;
 white-space:nowrap;
+transition:0.2s;
 }
 
 .sidebar:hover .sidebar-text{
@@ -142,30 +149,26 @@ border-radius:10px;
 # CUSTOM SIDEBAR
 # =====================================================
 
-st.markdown('<div class="sidebar">', unsafe_allow_html=True)
+st.markdown("""
+<div class="sidebar">
 
-# Galerie
-if st.button("🏠", key="nav_galerie"):
-    st.session_state.page = "Galerie"
-    st.rerun()
+<a class="sidebar-item" href="?page=Galerie">
+<span class="sidebar-icon">🏠</span>
+<span class="sidebar-text">Galerie</span>
+</a>
 
-st.markdown('<div class="sidebar-text">Galerie</div>', unsafe_allow_html=True)
+<a class="sidebar-item" href="?page=Upload">
+<span class="sidebar-icon">📦</span>
+<span class="sidebar-text">Neuer Fund</span>
+</a>
 
-# Upload
-if st.button("📦", key="nav_upload"):
-    st.session_state.page = "Upload"
-    st.rerun()
+<a class="sidebar-item" href="?page=Admin">
+<span class="sidebar-icon">🔐</span>
+<span class="sidebar-text">Admin</span>
+</a>
 
-st.markdown('<div class="sidebar-text">Neuer Fund</div>', unsafe_allow_html=True)
-
-# Admin
-if st.button("🔐", key="nav_admin"):
-    st.session_state.page = "Admin"
-    st.rerun()
-
-st.markdown('<div class="sidebar-text">Admin</div>', unsafe_allow_html=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
+</div>
+""", unsafe_allow_html=True)
 
 # =====================================================
 # LOAD MODEL
