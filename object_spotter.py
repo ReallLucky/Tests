@@ -420,26 +420,32 @@ def render_gallery(entries, admin=False):
             kategorie = entry.get("kategorie", entry.get("predicted_class", "-"))
             status = entry.get("status", "-")
             tags = f"**Farbe:** {farbe} &nbsp; **Kategorie:** {kategorie} &nbsp; **Status:** {status}"
-            st.markdown(tags, unsafe_allow_html=True)
 
-            # Show expander for details
+            # Show expander for details with all info inside
             with st.expander("Details anzeigen"):
+                st.markdown(tags, unsafe_allow_html=True)
                 desc = entry.get("description", "")
                 mail = entry.get("email", "")
                 st.markdown(f"**Beschreibung:**<br>{desc}", unsafe_allow_html=True)
                 st.markdown(f"**Email:** {mail}", unsafe_allow_html=True)
 
-            if admin:
-                c1, c2, c3 = st.columns([1, 0.5, 0.5])
-                with c1:
-                    st.markdown("&nbsp;", unsafe_allow_html=True)
-                with c2:
-                    if st.button("✉️ Email senden", key=f"email_{entry['id']}"):
-                        send_email(entry)
-                with c3:
-                    if st.button("🗑 Löschen", key=f"del_{entry['id']}"):
-                        delete_entry(entry)
-                        st.rerun()
+                if admin:
+                    c1, c2 = st.columns([1, 1])
+                    with c1:
+                        if st.button("✉️ Email senden", key=f"email_{entry['id']}"):
+                            send_email(entry)
+                    with c2:
+                        if st.button("🗑 Löschen", key=f"del_{entry['id']}"):
+                            delete_entry(entry)
+                            st.rerun()
+                    # Style delete button text as red
+                    st.markdown("""
+                        <style>
+                        button[kind="secondary"] > div > span:has-text("🗑 Löschen") {
+                            color: red !important;
+                        }
+                        </style>
+                    """, unsafe_allow_html=True)
 
 # =====================================================
 # PAGE ROUTER
@@ -573,4 +579,4 @@ def send_email(entry):
 #   ADD COLUMN kategorie TEXT,
 #   ADD COLUMN status TEXT,
 #   ADD COLUMN description TEXT,
-#   ADD COLUMN email TEXT;
+#   ADD COLUMN email TEXT;</file>
