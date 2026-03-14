@@ -371,7 +371,7 @@ def save_metadata(url, predicted_class, confidence, tag, kategorie, status, desc
 # LOAD ENTRIES
 # =====================================================
 
-def load_entries(class_filter=None,tag_filter=None):
+def load_entries(class_filter=None,tag_filter=None,status_filter=None):
 
     query=supabase.table("fundstuecke").select("*").order("created_at",desc=True)
 
@@ -380,6 +380,9 @@ def load_entries(class_filter=None,tag_filter=None):
 
     if tag_filter and tag_filter!="Alle":
         query=query.eq("tag",tag_filter)
+
+    if status_filter and status_filter!="Alle":
+        query=query.eq("status",status_filter)
 
     res=query.execute()
 
@@ -417,9 +420,8 @@ def render_gallery(entries, admin=False):
 
             # Compose tags
             farbe = entry.get("tag", "-")
-            kategorie = entry.get("kategorie", entry.get("predicted_class", "-"))
             status = entry.get("status", "-")
-            tags = f"**Farbe:** {farbe} &nbsp; **Kategorie:** {kategorie} &nbsp; **Status:** {status}"
+            tags = f"**Farbe:** {farbe} &nbsp; **Status:** {status}"
 
             # Show expander for details with all info inside
             with st.expander("Details anzeigen"):
@@ -432,8 +434,9 @@ def render_gallery(entries, admin=False):
                 if admin:
                     c1, c2 = st.columns([1, 1])
                     with c1:
-                        if st.button("✉️ Email senden", key=f"email_{entry['id']}"):
-                            send_email(entry)
+                        if entry.get("status") == "Missing":
+                            if st.button("✉️ Email senden", key=f"email_{entry['id']}"):
+                                send_email(entry)
                     with c2:
                         if st.button("🗑 Löschen", key=f"del_{entry['id']}"):
                             delete_entry(entry)
@@ -472,11 +475,18 @@ if page=="Galerie":
 
     st.divider()
 
-    class_filter=st.selectbox("Kategorie",["Alle","Hoodie","Pants","Shoes"])
+    status_filter, class_filter, tag_filter = st.columns(3)
 
-    tag_filter=st.selectbox("Farb Tag",["Alle","rot","blau","grün","gelb","schwarz","weiß"])
+    with status_filter:
+        status_filter_val = st.selectbox("Status", ["Alle", "Found", "Missing"])
 
-    entries=load_entries(class_filter,tag_filter)
+    with class_filter:
+        class_filter_val = st.selectbox("Kategorie", ["Alle", "Hoodie", "Pants", "Shoes"])
+
+    with tag_filter:
+        tag_filter_val = st.selectbox("Farb Tag", ["Alle", "rot", "blau", "grün", "gelb", "schwarz", "weiß"])
+
+    entries=load_entries(class_filter_val, tag_filter_val, status_filter_val)
 
     entries=entries[:st.session_state.batch_size]
 
@@ -579,4 +589,4 @@ def send_email(entry):
 #   ADD COLUMN kategorie TEXT,
 #   ADD COLUMN status TEXT,
 #   ADD COLUMN description TEXT,
-#   ADD COLUMN email TEXT;</file>
+#   ADD COLUMN email TEXT;
