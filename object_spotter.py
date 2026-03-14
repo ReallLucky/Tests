@@ -52,7 +52,7 @@ top:0;
 left:0;
 height:100vh;
 width:70px;
-background:rgba(20,20,20,0.85);
+background:rgba(20,20,20,0.9);
 backdrop-filter: blur(20px);
 transition:0.3s;
 overflow:hidden;
@@ -65,41 +65,34 @@ padding-top:20px;
 width:200px;
 }
 
-.sidebar-nav{
-display:flex;
-flex-direction:column;
-}
-
-.sidebar-item{
+.sidebar-button{
+width:100%;
 display:flex;
 align-items:center;
-color:white;
-background:none;
 border:none;
-width:100%;
-padding:16px;
+background:none;
+color:white;
 font-size:18px;
+padding:16px;
 cursor:pointer;
-text-align:left;
 }
 
-.sidebar-item:hover{
+.sidebar-button:hover{
 background:#1f1f1f;
 }
 
 .sidebar-icon{
+width:30px;
 font-size:20px;
-width:24px;
 }
 
-.sidebar-label{
-margin-left:12px;
+.sidebar-text{
 opacity:0;
 transition:0.2s;
 white-space:nowrap;
 }
 
-.sidebar:hover .sidebar-label{
+.sidebar:hover .sidebar-text{
 opacity:1;
 }
 
@@ -146,54 +139,33 @@ border-radius:10px;
 """, unsafe_allow_html=True)
 
 # =====================================================
-# SIDEBAR
+# CUSTOM SIDEBAR
 # =====================================================
 
-with st.sidebar:
+st.markdown('<div class="sidebar">', unsafe_allow_html=True)
 
-    st.markdown("""
-    <style>
-    section[data-testid="stSidebar"]{
-        width:70px !important;
-        transition:0.3s;
-        overflow:hidden;
-    }
+# Galerie
+if st.button("🏠", key="nav_galerie"):
+    st.session_state.page = "Galerie"
+    st.rerun()
 
-    section[data-testid="stSidebar"]:hover{
-        width:200px !important;
-    }
+st.markdown('<div class="sidebar-text">Galerie</div>', unsafe_allow_html=True)
 
-    .sidebar-label{
-        margin-left:10px;
-        opacity:0;
-        transition:0.2s;
-        white-space:nowrap;
-    }
+# Upload
+if st.button("📦", key="nav_upload"):
+    st.session_state.page = "Upload"
+    st.rerun()
 
-    section[data-testid="stSidebar"]:hover .sidebar-label{
-        opacity:1;
-    }
+st.markdown('<div class="sidebar-text">Neuer Fund</div>', unsafe_allow_html=True)
 
-    button[kind="secondary"]{
-        display:flex;
-        align-items:center;
-        justify-content:flex-start;
-        gap:6px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+# Admin
+if st.button("🔐", key="nav_admin"):
+    st.session_state.page = "Admin"
+    st.rerun()
 
-    if st.button("🏠  Galerie", key="nav_galerie"):
-        st.session_state.page = "Galerie"
-        st.rerun()
+st.markdown('<div class="sidebar-text">Admin</div>', unsafe_allow_html=True)
 
-    if st.button("📦  Neuer Fund", key="nav_upload"):
-        st.session_state.page = "Upload"
-        st.rerun()
-
-    if st.button("🔐  Admin", key="nav_admin"):
-        st.session_state.page = "Admin"
-        st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
 # LOAD MODEL
@@ -201,8 +173,10 @@ with st.sidebar:
 
 @st.cache_resource
 def load_tm_model():
+
     model = load_model("keras_model.h5", compile=False)
     class_names = open("labels.txt").readlines()
+
     return model, class_names
 
 model, class_names = load_tm_model()
@@ -212,12 +186,15 @@ model, class_names = load_tm_model()
 # =====================================================
 
 def square_crop(image):
+
     w,h=image.size
     m=min(w,h)
+
     left=(w-m)//2
     top=(h-m)//2
     right=(w+m)//2
     bottom=(h+m)//2
+
     return image.crop((left,top,right,bottom))
 
 # =====================================================
@@ -364,15 +341,6 @@ def render_gallery(entries,admin=False):
 
                     delete_entry(entry)
                     st.rerun()
-
-# =====================================================
-# QUERY PARAM ROUTER
-# =====================================================
-
-params = st.query_params
-
-if "page" in params:
-    st.session_state.page = params["page"]
 
 # =====================================================
 # PAGE ROUTER
