@@ -354,15 +354,17 @@ def upload_image(image,predicted_class):
 # SAVE METADATA
 # =====================================================
 
-def save_metadata(url,predicted_class,confidence,tag):
-
-    data={
-        "image_url":url,
-        "predicted_class":predicted_class,
-        "confidence":confidence,
-        "tag":tag
+def save_metadata(url, predicted_class, confidence, tag, kategorie, status, description, email):
+    data = {
+        "image_url": url,
+        "predicted_class": predicted_class,
+        "confidence": confidence,
+        "tag": tag,
+        "kategorie": kategorie,
+        "status": status,
+        "description": description,
+        "email": email
     }
-
     supabase.table("fundstuecke").insert(data).execute()
 
 # =====================================================
@@ -401,54 +403,43 @@ def delete_entry(entry):
 # GALLERY RENDER
 # =====================================================
 
-def render_gallery(entries,admin=False):
-
-    cols=st.columns(4)
-
-    for i,entry in enumerate(entries):
-
-        with cols[i%4]:
-
+def render_gallery(entries, admin=False):
+    cols = st.columns(4)
+    for i, entry in enumerate(entries):
+        with cols[i % 4]:
             try:
-
-                response=requests.get(entry["image_url"])
-                image=Image.open(io.BytesIO(response.content))
-
-                image=square_crop(image)
-
-                st.image(image,use_container_width=True)
-
+                response = requests.get(entry["image_url"])
+                image = Image.open(io.BytesIO(response.content))
+                image = square_crop(image)
+                st.image(image, use_container_width=True)
             except:
-
                 st.warning("Bild konnte nicht geladen werden")
 
-            conf=int(entry["confidence"]*100)
+            # Compose tags
+            farbe = entry.get("tag", "-")
+            kategorie = entry.get("kategorie", entry.get("predicted_class", "-"))
+            status = entry.get("status", "-")
+            tags = f"**Farbe:** {farbe} &nbsp; **Kategorie:** {kategorie} &nbsp; **Status:** {status}"
+            st.markdown(tags, unsafe_allow_html=True)
 
-            st.markdown(f"**{entry['predicted_class']}**")
-
-            st.markdown(f"""
-            <div class="conf-bar">
-            <div class="conf-fill" style="width:{conf}%"></div>
-            </div>
-            """,unsafe_allow_html=True)
-
-            st.write(conf,"%")
+            # Show expander for details
+            with st.expander("Details anzeigen"):
+                desc = entry.get("description", "")
+                mail = entry.get("email", "")
+                st.markdown(f"**Beschreibung:**<br>{desc}", unsafe_allow_html=True)
+                st.markdown(f"**Email:** {mail}", unsafe_allow_html=True)
 
             if admin:
-
-                c1, c2 = st.columns([1, 0.2])
-
+                c1, c2, c3 = st.columns([1, 0.5, 0.5])
                 with c1:
-                    st.write("Farbe:", entry["tag"])
-
+                    st.markdown("&nbsp;", unsafe_allow_html=True)
                 with c2:
-                    if st.button("🗑", key=f"del_{entry['id']}"):
+                    if st.button("✉️ Email senden", key=f"email_{entry['id']}"):
+                        send_email(entry)
+                with c3:
+                    if st.button("🗑 Löschen", key=f"del_{entry['id']}"):
                         delete_entry(entry)
                         st.rerun()
-
-            else:
-
-                st.write("Farbe:", entry["tag"])
 
 # =====================================================
 # PAGE ROUTER
@@ -496,50 +487,38 @@ if page=="Galerie":
 # UPLOAD
 # =====================================================
 
-if page=="Upload":
-
+if page == "Upload":
     st.title("📦 Neues Fundstück")
-
-    tab1,tab2=st.tabs(["Upload","Kamera"])
-
-    image_file=None
-
+    tab1, tab2 = st.tabs(["Upload", "Kamera"])
+    image_file = None
     with tab1:
-
-        uploaded=st.file_uploader("Bild auswählen",type=["jpg","jpeg","png"])
-
+        uploaded = st.file_uploader("Bild auswählen", type=["jpg", "jpeg", "png"])
         if uploaded:
-            image_file=uploaded
-
+            image_file = uploaded
     with tab2:
-
-        camera=st.camera_input("Foto aufnehmen")
-
+        camera = st.camera_input("Foto aufnehmen")
         if camera:
-            image_file=camera
+            image_file = camera
 
     if image_file:
-
-        image=Image.open(image_file).convert("RGB")
-
-        st.image(image,use_container_width=True)
-
-        predicted_class,confidence=classify_image(image)
-
+        image = Image.open(image_file).convert("RGB")
+        st.image(image, use_container_width=True)
+        predicted_class, confidence = classify_image(image)
         st.subheader("🤖 KI Ergebnis")
-
-        st.write("Klasse:",predicted_class)
-
+        st.write("Klasse:", predicted_class)
         st.progress(confidence)
 
-        tag=st.selectbox("Farb Tag",["rot","blau","grün","gelb","schwarz","weiß"])
+        tag = st.selectbox("Farbe", ["rot", "blau", "grün", "gelb", "schwarz", "weiß"])
+        kategorie = st.selectbox("Kategorie", ["Hoodie", "Pants", "Shoes"])
+        status = st.selectbox("Status", ["Found", "Missing"])
+        description = st.text_area("Beschreibung", max_chars=500)
+        email = st.text_input("Email (optional)")
 
         if st.button("Speichern"):
-
-            url=upload_image(image,predicted_class)
-
-            save_metadata(url,predicted_class,confidence,tag)
-
+            url = upload_image(image, predicted_class)
+            save_metadata(
+                url, predicted_class, confidence, tag, kategorie, status, description, email
+            )
             st.success("Fundstück gespeichert!")
 
 # =====================================================
@@ -576,6 +555,22 @@ if page=="Admin":
 
     else:
 
-        entries=load_entries()
+        entries = load_entries()
+        render_gallery(entries, admin=True)
 
-        render_gallery(entries,admin=True)
+# =====================================================
+# SEND EMAIL STUB
+# =====================================================
+def send_email(entry):
+    # TODO: Implement actual email sending logic
+    st.info(f"Email an {entry.get('email','(keine Email)')} gesendet (Stub).")
+
+# =====================================================
+# SQL ALTER STATEMENT
+# =====================================================
+# -- Füge neue Felder zur Tabelle fundstuecke hinzu:
+# ALTER TABLE fundstuecke
+#   ADD COLUMN kategorie TEXT,
+#   ADD COLUMN status TEXT,
+#   ADD COLUMN description TEXT,
+#   ADD COLUMN email TEXT;
