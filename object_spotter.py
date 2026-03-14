@@ -44,9 +44,47 @@ if "page" in params:
 st.markdown("""
 <style>
 
-[data-testid="stAppViewContainer"]{
-background: radial-gradient(circle at bottom,#000033 0%,#000000 60%);
-background-attachment:fixed;
+/* TOPBAR (mobile / portrait) */
+
+.topbar{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:60px;
+background:rgba(20,20,20,0.9);
+backdrop-filter:blur(20px);
+display:none;
+align-items:center;
+justify-content:space-around;
+border-bottom:1px solid #222;
+z-index:999;
+}
+
+.topbar a{
+color:white !important;
+text-decoration:none !important;
+font-weight:700;
+font-size:18px;
+}
+
+/* RESPONSIVE SWITCH */
+
+@media (max-aspect-ratio: 1/1){
+
+.sidebar{
+display:none;
+}
+
+.topbar{
+display:flex;
+}
+
+.main .block-container{
+margin-left:0 !important;
+margin-top:70px;
+}
+
 }
 
 /* SIDEBAR */
@@ -157,6 +195,11 @@ border-radius:10px;
 # =====================================================
 
 st.markdown("""
+<div class="topbar">
+<a href="?page=Galerie" target="_self">🏠</a>
+<a href="?page=Upload" target="_self">📦</a>
+<a href="?page=Admin" target="_self">🔐</a>
+</div>
 <div class="sidebar">
 
 <a class="sidebar-item" href="?page=Galerie" target="_self">
@@ -343,14 +386,21 @@ def render_gallery(entries,admin=False):
 
             st.write(conf,"%")
 
-            st.write("Farbe:",entry["tag"])
-
             if admin:
 
-                if st.button("🗑 Löschen",key=f"del_{entry['id']}"):
+                c1, c2 = st.columns([3,1])
 
-                    delete_entry(entry)
-                    st.rerun()
+                with c1:
+                    st.write("Farbe:", entry["tag"])
+
+                with c2:
+                    if st.button("🗑", key=f"del_{entry['id']}"):
+                        delete_entry(entry)
+                        st.rerun()
+
+            else:
+
+                st.write("Farbe:", entry["tag"])
 
 # =====================================================
 # PAGE ROUTER
@@ -450,7 +500,16 @@ if page=="Upload":
 
 if page=="Admin":
 
-    st.title("🔐 Admin")
+    header_left, header_right = st.columns([6,1])
+
+    with header_left:
+        st.title("🔐 Admin")
+
+    with header_right:
+        if st.session_state.admin_logged_in:
+            if st.button("Logout"):
+                st.session_state.admin_logged_in=False
+                st.rerun()
 
     if not st.session_state.admin_logged_in:
 
@@ -468,11 +527,6 @@ if page=="Admin":
                 st.error("Falsches Passwort")
 
     else:
-
-        if st.button("Logout"):
-
-            st.session_state.admin_logged_in=False
-            st.rerun()
 
         entries=load_entries()
 
