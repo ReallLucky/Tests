@@ -421,7 +421,8 @@ def render_gallery(entries, admin=False):
             # Compose tags
             farbe = entry.get("tag", "-")
             status = entry.get("status", "-")
-            tags = f"**Farbe:** {farbe} &nbsp; **Status:** {status}"
+            predicted_class = entry.get("predicted_class", "-")
+            tags = f"**Kategorie:** {predicted_class} &nbsp; **Farbe:** {farbe} &nbsp; **Status:** {status}"
 
             # Show expander for details with all info inside
             with st.expander("Details anzeigen"):
@@ -525,7 +526,6 @@ if page == "Upload":
         st.progress(confidence)
 
         tag = st.selectbox("Farbe", ["rot", "blau", "grün", "gelb", "schwarz", "weiß"])
-        kategorie = st.selectbox("Kategorie", ["Hoodie", "Pants", "Shoes"])
         status = st.selectbox("Status", ["Found", "Missing"])
         description = st.text_area("Beschreibung", max_chars=500)
         email = st.text_input("Email (optional)")
@@ -533,7 +533,7 @@ if page == "Upload":
         if st.button("Speichern"):
             url = upload_image(image, predicted_class)
             save_metadata(
-                url, predicted_class, confidence, tag, kategorie, status, description, email
+                url, predicted_class, confidence, tag, predicted_class, status, description, email
             )
             st.success("Fundstück gespeichert!")
 
@@ -570,8 +570,19 @@ if page=="Admin":
                 st.error("Falsches Passwort")
 
     else:
+        # Add filters similar to Galerie page
+        status_filter_col, class_filter_col, tag_filter_col = st.columns(3)
 
-        entries = load_entries()
+        with status_filter_col:
+            status_filter_val = st.selectbox("Status", ["Alle", "Found", "Missing"], key="admin_status_filter")
+
+        with class_filter_col:
+            class_filter_val = st.selectbox("Kategorie", ["Alle", "Hoodie", "Pants", "Shoes"], key="admin_class_filter")
+
+        with tag_filter_col:
+            tag_filter_val = st.selectbox("Farb Tag", ["Alle", "rot", "blau", "grün", "gelb", "schwarz", "weiß"], key="admin_tag_filter")
+
+        entries = load_entries(class_filter_val, tag_filter_val, status_filter_val)
         render_gallery(entries, admin=True)
 
 # =====================================================
