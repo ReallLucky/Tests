@@ -74,13 +74,20 @@ width:210px;
 display:flex;
 align-items:center;
 gap:14px;
-color:white;
-text-decoration:none;
+color:white !important;
+text-decoration:none !important;
 font-size:16px;
+font-weight:700;
 padding:14px 18px;
 border-radius:10px;
 margin:4px 8px;
 transition:0.2s;
+}
+
+.sidebar-item:link,
+.sidebar-item:visited{
+color:white !important;
+text-decoration:none !important;
 }
 
 .sidebar-item:hover{
