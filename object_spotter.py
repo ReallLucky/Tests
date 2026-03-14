@@ -482,7 +482,7 @@ if page=="Galerie":
         status_filter_val = st.selectbox("Status", ["Alle", "Found", "Missing"])
 
     with class_filter:
-        class_filter_val = st.selectbox("Kategorie", ["Alle", "Hoodie", "Pants", "Shoes"])
+        class_filter_val = st.selectbox("Kategorie", ["Alle", "Hoodie", "Hose", "Schuhe"])
 
     with tag_filter:
         tag_filter_val = st.selectbox("Farb Tag", ["Alle", "rot", "blau", "grün", "gelb", "schwarz", "weiß"])
@@ -577,7 +577,7 @@ if page=="Admin":
             status_filter_val = st.selectbox("Status", ["Alle", "Found", "Missing"], key="admin_status_filter")
 
         with class_filter_col:
-            class_filter_val = st.selectbox("Kategorie", ["Alle", "Hoodie", "Pants", "Shoes"], key="admin_class_filter")
+            class_filter_val = st.selectbox("Kategorie", ["Alle", "Hoodie", "Hose", "Schuhe"], key="admin_class_filter")
 
         with tag_filter_col:
             tag_filter_val = st.selectbox("Farb Tag", ["Alle", "rot", "blau", "grün", "gelb", "schwarz", "weiß"], key="admin_tag_filter")
@@ -588,9 +588,48 @@ if page=="Admin":
 # =====================================================
 # SEND EMAIL STUB
 # =====================================================
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 def send_email(entry):
-    # TODO: Implement actual email sending logic
-    st.info(f"Email an {entry.get('email','(keine Email)')} gesendet (Stub).")
+    recipient = entry.get("email", "")
+    if not recipient:
+        st.warning("Keine Email-Adresse angegeben. Email wird nicht gesendet.")
+        return
+
+    # Email credentials from Streamlit secrets
+    sender_email = st.secrets["email"]["address"]
+    sender_password = st.secrets["email"]["password"]
+    smtp_server = st.secrets["email"].get("smtp_server", "smtp.gmail.com")
+    smtp_port = int(st.secrets["email"].get("smtp_port", 587))
+
+    # Prepare email content
+    subject = "FundTube: Ihr Fundstück wurde gefunden!"
+    image_url = entry.get("image_url", "")
+    message_text = (
+        "Hallo,\n\n"
+        "Ihr Fundstück wurde auf FundTube gefunden! "
+        "Hier ist der Link zum Bild:\n"
+        f"{image_url}\n\n"
+        "Falls Sie noch Fragen haben, antworten Sie bitte auf diese Email.\n\n"
+        "Viele Grüße,\nDas FundTube Team"
+    )
+
+    msg = MIMEMultipart()
+    msg["From"] = sender_email
+    msg["To"] = recipient
+    msg["Subject"] = subject
+    msg.attach(MIMEText(message_text, "plain"))
+
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, recipient, msg.as_string())
+        st.success(f"Email an {recipient} gesendet.")
+    except Exception as e:
+        st.error(f"Fehler beim Senden der Email: {e}")
 
 # =====================================================
 # SQL ALTER STATEMENT
