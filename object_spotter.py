@@ -149,30 +149,51 @@ border-radius:10px;
 # SIDEBAR
 # =====================================================
 
-st.markdown("""
-<div class="sidebar">
+with st.sidebar:
 
-<div class="sidebar-nav">
+    st.markdown("""
+    <style>
+    section[data-testid="stSidebar"]{
+        width:70px !important;
+        transition:0.3s;
+        overflow:hidden;
+    }
 
-<button class="sidebar-item" onclick="window.location.search='?page=Galerie'">
-<span class="sidebar-icon">🏠</span>
-<span class="sidebar-label">Galerie</span>
-</button>
+    section[data-testid="stSidebar"]:hover{
+        width:200px !important;
+    }
 
-<button class="sidebar-item" onclick="window.location.search='?page=Upload'">
-<span class="sidebar-icon">📦</span>
-<span class="sidebar-label">Neuer Fund</span>
-</button>
+    .sidebar-label{
+        margin-left:10px;
+        opacity:0;
+        transition:0.2s;
+        white-space:nowrap;
+    }
 
-<button class="sidebar-item" onclick="window.location.search='?page=Admin'">
-<span class="sidebar-icon">🔐</span>
-<span class="sidebar-label">Admin</span>
-</button>
+    section[data-testid="stSidebar"]:hover .sidebar-label{
+        opacity:1;
+    }
 
-</div>
+    button[kind="secondary"]{
+        display:flex;
+        align-items:center;
+        justify-content:flex-start;
+        gap:6px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-</div>
-""", unsafe_allow_html=True)
+    if st.button("🏠  Galerie", key="nav_galerie"):
+        st.session_state.page = "Galerie"
+        st.rerun()
+
+    if st.button("📦  Neuer Fund", key="nav_upload"):
+        st.session_state.page = "Upload"
+        st.rerun()
+
+    if st.button("🔐  Admin", key="nav_admin"):
+        st.session_state.page = "Admin"
+        st.rerun()
 
 # =====================================================
 # LOAD MODEL
