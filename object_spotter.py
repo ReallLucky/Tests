@@ -152,17 +152,17 @@ border-radius:10px;
 st.markdown("""
 <div class="sidebar">
 
-<a class="sidebar-item" href="?page=Galerie">
+<a class="sidebar-item" onclick="window.location.search='?page=Galerie'">
 <span class="sidebar-icon">🏠</span>
 <span class="sidebar-text">Galerie</span>
 </a>
 
-<a class="sidebar-item" href="?page=Upload">
+<a class="sidebar-item" onclick="window.location.search='?page=Upload'">
 <span class="sidebar-icon">📦</span>
 <span class="sidebar-text">Neuer Fund</span>
 </a>
 
-<a class="sidebar-item" href="?page=Admin">
+<a class="sidebar-item" onclick="window.location.search='?page=Admin'">
 <span class="sidebar-icon">🔐</span>
 <span class="sidebar-text">Admin</span>
 </a>
