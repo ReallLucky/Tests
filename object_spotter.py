@@ -567,7 +567,15 @@ if page == "Upload":
         if uploaded:
             image_file = uploaded
     with tab2:
-        camera = st.camera_input("Foto aufnehmen")
+        # Responsive camera input: center and widen on desktop, default on mobile/narrow screens
+        if not should_use_topbar():
+            # Desktop/wide: center camera in wide column
+            cam_left, cam_center, cam_right = st.columns([1, 2, 1])
+            with cam_center:
+                camera = st.camera_input("Foto aufnehmen")
+        else:
+            # Mobile/narrow: default
+            camera = st.camera_input("Foto aufnehmen")
         if camera:
             image_file = camera
 
