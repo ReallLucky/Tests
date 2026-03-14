@@ -43,6 +43,12 @@ if "page" in params:
 
 st.markdown("""
 <style>
+/* HIDE STREAMLIT DEFAULT UI */
+header {visibility: hidden;}
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+[data-testid="stToolbar"] {display: none;}
+[data-testid="stDecoration"] {display: none;}
 
 /* TOPBAR (mobile / portrait) */
 
